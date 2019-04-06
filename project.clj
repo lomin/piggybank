@@ -1,5 +1,5 @@
 (defproject me.lomin.accounting-piggybank "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
+  :description "This projects describes a very simple way to model and check the design of a distributed system."
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
