@@ -15,7 +15,7 @@
     (is (=* {7 {:last-document {:next      {:cash-up-id 1, :document-id 1}
                                 :self      {:cash-up-id 1, :document-id 1}
                                 :transfers [[#{:some-id-1} -1]]}}}
-            (intp/interpret-event test-state [:db-read {:process-id 7}]))))
+            (intp/interpret-event test-state [:accounting-read {:process-id 7}]))))
 
   (testing "update is appended to last document"
     (is (=* {:accounting {[:cash-up 1] {[:document 1] {:next      {:cash-up-id 1, :document-id 1}
@@ -23,24 +23,24 @@
                                                        :transfers [[#{:some-id-1} -1]
                                                                    [#{7} 5]]}}}}
             (-> test-state
-                (intp/interpret-event [:db-read {:process-id 7}])
-                (intp/interpret-event [:db-write {:process-id 7 :amount 5}])))))
+                (intp/interpret-event [:accounting-read {:process-id 7}])
+                (intp/interpret-event [:accounting-write {:process-id 7 :amount 5}])))))
 
   (testing "state is negative, hence no updates to db"
     (is (=* test-state
             (-> test-state
-                (intp/interpret-event [:user {:process-id 7 :amount -10}])
-                (intp/interpret-event [:db-read {:process-id 7}])
-                (intp/interpret-event [:db-write {:process-id 7 :amount -10}]))))))
+                (intp/interpret-event [:process {:process-id 7 :amount -10}])
+                (intp/interpret-event [:accounting-read {:process-id 7}])
+                (intp/interpret-event [:accounting-write {:process-id 7 :amount -10}]))))))
 
 (deftest ^:unit interpret-timeline-test
   (let [test-timeline [[:stuttering]
-                       [:user {:process-id 6, :amount 1}]
-                       [:user {:process-id 59, :amount -1}]
-                       [:db-read {:process-id 59, :amount -1}]
-                       [:user {:process-id 835, :amount 0}]
-                       [:db-read {:process-id 835, :amount 0}]
-                       [:db-write {:process-id 835, :amount 0}]]]
+                       [:process {:process-id 6, :amount 1}]
+                       [:process {:process-id 59, :amount -1}]
+                       [:accounting-read {:process-id 59, :amount -1}]
+                       [:process {:process-id 835, :amount 0}]
+                       [:accounting-read {:process-id 835, :amount 0}]
+                       [:accounting-write {:process-id 835, :amount 0}]]]
     (is (=* {59           {:last-document {:next      {:cash-up-id 1, :document-id 1}
                                            :self      {:cash-up-id 1, :document-id 1}
                                            :transfers [[#{:some-id-1} -1]]}}
@@ -60,24 +60,24 @@
 
 (deftest ^:unit interpret-timeline-with-property-violations-test
   (let [test-timeline [[:stuttering]
-                       [:user {:process-id 0, :amount -1}]
-                       [:user {:process-id 1, :amount -1}]
-                       [:db-read {:process-id 0, :amount -1}]
-                       [:db-write {:process-id 0, :amount -1}]
-                       [:db-read {:process-id 1, :amount -1}]
-                       [:db-write {:process-id 1, :amount -1}]
-                       [:state-write {:process-id 0, :amount -1}]
-                       [:state-write {:process-id 1, :amount -1}]]]
+                       [:process {:process-id 0, :amount -1}]
+                       [:process {:process-id 1, :amount -1}]
+                       [:accounting-read {:process-id 0, :amount -1}]
+                       [:accounting-write {:process-id 0, :amount -1}]
+                       [:accounting-read {:process-id 1, :amount -1}]
+                       [:accounting-write {:process-id 1, :amount -1}]
+                       [:balance-write {:process-id 0, :amount -1}]
+                       [:balance-write {:process-id 1, :amount -1}]]]
     (is (= {:property-violated {:name     :db-state-must-always-be>=0
                                 :timeline [[:stuttering]
-                                           [:user {:process-id 0, :amount -1}]
-                                           [:user {:process-id 1, :amount -1}]
-                                           [:db-read {:process-id 0, :amount -1}]
-                                           [:db-write {:process-id 0, :amount -1}]
-                                           [:db-read {:process-id 1, :amount -1}]
-                                           [:db-write {:process-id 1, :amount -1}]
-                                           [:state-write {:process-id 0, :amount -1}]
-                                           [:state-write {:process-id 1, :amount -1}]]}}
+                                           [:process {:process-id 0, :amount -1}]
+                                           [:process {:process-id 1, :amount -1}]
+                                           [:accounting-read {:process-id 0, :amount -1}]
+                                           [:accounting-write {:process-id 0, :amount -1}]
+                                           [:accounting-read {:process-id 1, :amount -1}]
+                                           [:accounting-write {:process-id 1, :amount -1}]
+                                           [:balance-write {:process-id 0, :amount -1}]
+                                           [:balance-write {:process-id 1, :amount -1}]]}}
            (-> test-state
                (intp/interpret-timeline test-timeline)
                (select-keys [:property-violated]))))))
@@ -88,19 +88,19 @@
                                         [:document 8] {:next      {:cash-up-id 1, :document-id 8}
                                                        :self      {:cash-up-id 1, :document-id 8}
                                                        :transfers []}}}}
-            (intp/interpret-timeline test-state [[:user {:process-id 7, :amount 1}]
-                                                 [:db-read {:process-id 7, :amount 1}]
-                                                 [:db-add-new-document {:process-id 7, :amount 1}]]))))
+            (intp/interpret-timeline test-state [[:process {:process-id 7, :amount 1}]
+                                                 [:accounting-read {:process-id 7, :amount 1}]
+                                                 [:accounting-add-new-document {:process-id 7, :amount 1}]]))))
 
   (testing "document 1 now links to document 7"
     (is (=* {:accounting {[:cash-up 1] {[:document 1] {:next {:cash-up-id 1, :document-id 8}}
                                         [:document 8] {:next      {:cash-up-id 1, :document-id 8}
                                                        :self      {:cash-up-id 1, :document-id 8}
                                                        :transfers []}}}}
-            (intp/interpret-timeline test-state [[:user {:process-id 7, :amount 1}]
-                                                 [:db-read {:process-id 7, :amount 1}]
-                                                 [:db-add-new-document {:process-id 7, :amount 1}]
-                                                 [:db-link-to-new-document {:process-id 7, :amount 1}]])))))
+            (intp/interpret-timeline test-state [[:process {:process-id 7, :amount 1}]
+                                                 [:accounting-read {:process-id 7, :amount 1}]
+                                                 [:accounting-add-new-document {:process-id 7, :amount 1}]
+                                                 [:accounting-link-to-new-document {:process-id 7, :amount 1}]])))))
 
 (defn interpret-timeline [state timeline]
   (dissoc (intp/interpret-timeline state timeline)
@@ -111,29 +111,29 @@
   (testing "restarting a system with an inmemory-db and an eventually consistent database"
     (is (=* test-state
             (interpret-timeline test-state [[:restart {:past 0}]])))
-    (is (= (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
-                                           [:db-write {:process-id 7 :amount 5}]
-                                           [:state-write {:process-id 7 :amount 5}]])
-           (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
-                                           [:db-write {:process-id 7 :amount 5}]
-                                           [:state-write {:process-id 7 :amount 5}]
+    (is (= (interpret-timeline test-state [[:accounting-read {:process-id 7 :amount 5}]
+                                           [:accounting-write {:process-id 7 :amount 5}]
+                                           [:balance-write {:process-id 7 :amount 5}]])
+           (interpret-timeline test-state [[:accounting-read {:process-id 7 :amount 5}]
+                                           [:accounting-write {:process-id 7 :amount 5}]
+                                           [:balance-write {:process-id 7 :amount 5}]
                                            [:restart {:past 0}]])))
 
-    (is (= (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
-                                           [:db-write {:process-id 7 :amount 5}]
-                                           [:state-write {:process-id 7 :amount 5}]])
-           (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
-                                           [:db-write {:process-id 7 :amount 5}]
-                                           [:state-write {:process-id 7 :amount 5}]
+    (is (= (interpret-timeline test-state [[:accounting-read {:process-id 7 :amount 5}]
+                                           [:accounting-write {:process-id 7 :amount 5}]
+                                           [:balance-write {:process-id 7 :amount 5}]])
+           (interpret-timeline test-state [[:accounting-read {:process-id 7 :amount 5}]
+                                           [:accounting-write {:process-id 7 :amount 5}]
+                                           [:balance-write {:process-id 7 :amount 5}]
                                            [:restart {:past 1}]])))
 
-    (is (= (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
-                                           [:db-write {:process-id 7 :amount 5}]])
-           (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
-                                           [:db-write {:process-id 7 :amount 5}]
-                                           [:state-write {:process-id 7 :amount 5}]
+    (is (= (interpret-timeline test-state [[:accounting-read {:process-id 7 :amount 5}]
+                                           [:accounting-write {:process-id 7 :amount 5}]])
+           (interpret-timeline test-state [[:accounting-read {:process-id 7 :amount 5}]
+                                           [:accounting-write {:process-id 7 :amount 5}]
+                                           [:balance-write {:process-id 7 :amount 5}]
                                            [:restart {:past 2}]])
-           (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
-                                           [:db-write {:process-id 7 :amount 5}]
-                                           [:state-write {:process-id 7 :amount 5}]
+           (interpret-timeline test-state [[:accounting-read {:process-id 7 :amount 5}]
+                                           [:accounting-write {:process-id 7 :amount 5}]
+                                           [:balance-write {:process-id 7 :amount 5}]
                                            [:restart {:past 3}]])))))

@@ -4,7 +4,7 @@
             [me.lomin.accounting-piggybank.interpreter.properties :as props]))
 
 (def IN-MEMORY-BALANCE [:balance :amount])
-(def IN-MEMORY-PIDS [:balance :events])
+(def IN-MEMORY-PIDS [:balance :processes])
 
 (defn get-local-variable [state {pid :process-id} v-name]
   (get-in state [pid v-name]))
@@ -75,14 +75,14 @@
   (if (check-failed? state data)
     state
     (condp = event-type
-      :user (check-negative-balance state data)
-      :db-read (db-read state data)
-      :db-write (db-write state data)
-      :state-write (state-write state data)
-      :db-link-to-new-document (db-link-to-new-document state data)
-      :db-add-new-document (db-add-new-document state data)
-      :db-gc-new-branch (db-gc-new-branch state data)
-      :db-gc-link-to-new-branch (db-gc-link-to-new-branch state data)
+      :process (check-negative-balance state data)
+      :accounting-read (db-read state data)
+      :accounting-write (db-write state data)
+      :balance-write (state-write state data)
+      :accounting-link-to-new-document (db-link-to-new-document state data)
+      :accounting-add-new-document (db-add-new-document state data)
+      :accounting-gc-new-branch (db-gc-new-branch state data)
+      :accounting-gc-link-to-new-branch (db-gc-link-to-new-branch state data)
       :restart (restart state data)
       state)))
 

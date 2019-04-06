@@ -42,8 +42,8 @@
                                                                              :self      {:cash-up-id 1 :document-id 1}
                                                                              :transfers [[#{:some-id-1} -1]]}}
                                             [:cash-up :meta] {[:document :meta] {[:cash-up :start] {:cash-up-id 0 :document-id 0}}}}
-                               :balance    {:amount 1
-                                            :events #{:some-id-0 :some-id-1 :unlinked}}}))))
+                               :balance    {:amount    1
+                                            :processes #{:some-id-0 :some-id-1 :unlinked}}}))))
 
 (deftest ^:unit document-database-is-only-on-consistent-on-document-level-test
   (is (= false (props/more-than-one-document-change-per-timeslot? spec/example-universe)))

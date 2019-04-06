@@ -1,6 +1,6 @@
 (ns me.lomin.accounting-piggybank.timeline.core
   (:require [me.lomin.accounting-piggybank.timeline.spec :as s]
-            [me.lomin.sayang :refer [of sdefn]]))
+            [me.lomin.sayang :refer [sdefn]]))
 
 (def EMPTY-TIMELINES #{[]})
 

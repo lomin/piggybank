@@ -40,7 +40,7 @@
   (into #{} get-event-ids (accounting/follow-next-links universe)))
 
 (defn alle-event-ids-from-balance [universe]
-  (get-in universe [:balance :events]))
+  (get-in universe [:balance :processes]))
 
 (defn lost-updates? [universe]
   (not (set/superset? (alle-event-ids-from-cash-ups universe)

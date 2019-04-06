@@ -18,4 +18,4 @@
 (s/def ::start ::link)
 (s/def ::next ::link)
 (s/def ::transfers (s/coll-of ::transfer))
-(s/def ::transfer (s/tuple ::spec/events ::spec/amount))
+(s/def ::transfer (s/tuple ::spec/processes ::spec/amount))

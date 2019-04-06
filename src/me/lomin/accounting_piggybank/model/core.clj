@@ -4,7 +4,7 @@
             [me.lomin.accounting-piggybank.accounting.spec :as accounting-spec]
             [me.lomin.accounting-piggybank.model.logic :refer [for-all there-exists]]))
 
-(defn get-event-id [[_ data]]
+(defn get-process-id [[_ data]]
   (:process-id data))
 
 (defn find-events [timeline event-type]
@@ -12,15 +12,15 @@
             (= event-type* event-type))
           timeline))
 
-(defn get-last-id [timeline]
-  (or (->> (find-events timeline :user)
-           (sort-by get-event-id)
+(defn get-last-process-id [timeline]
+  (or (->> (find-events timeline :process)
+           (sort-by get-process-id)
            (last)
-           (get-event-id))
+           (get-process-id))
       -1))
 
-(defn- get-next-id [timeline]
-  (inc (get-last-id timeline)))
+(defn- get-next-process-id [timeline]
+  (inc (get-last-process-id timeline)))
 
 (defn- combine-events-with [f event-types]
   (fn [event-candidates {[_ data] :event}]
@@ -29,16 +29,16 @@
                  event-types)))))
 
 (defn- writing-process-finished? [timeline]
-  (for-all [incoming-event (find-events timeline :user)]
-           (there-exists [write-completion-event (find-events timeline :state-write)]
-                         (= (get-event-id incoming-event)
-                            (get-event-id write-completion-event)))))
+  (for-all [incoming-event (find-events timeline :process)]
+           (there-exists [write-completion-event (find-events timeline :balance-write)]
+                         (= (get-process-id incoming-event)
+                            (get-process-id write-completion-event)))))
 
 (defn- generate-incoming-events-from [timeline events]
   (map (fn [event id]
          (update event 1 assoc :process-id id))
        events
-       (iterate inc (get-next-id timeline))))
+       (iterate inc (get-next-process-id timeline))))
 
 (defn- combine [event-candidates combinators context]
   (if combinators
@@ -133,103 +133,103 @@
 
 (def multi-threaded-simple-model
   (partial make-model
-           {::always     (all (generate-incoming multi-threaded
-                                                 [:user {:amount 1}]
-                                                 [:user {:amount -1}])
-                              (always [:stuttering]))
-            :user        (all (triggers :db-read))
-            :db-read     (all (triggers :db-write)
-                              (prevents :db-read))
-            :db-write    (all (triggers :state-write)
-                              (prevents :db-write))
-            :state-write (all (prevents :state-write))}))
+           {::always          (all (generate-incoming multi-threaded
+                                                      [:process {:amount 1}]
+                                                      [:process {:amount -1}])
+                                   (always [:stuttering]))
+            :process          (all (triggers :accounting-read))
+            :accounting-read  (all (triggers :accounting-write)
+                                   (prevents :accounting-read))
+            :accounting-write (all (triggers :balance-write)
+                                   (prevents :accounting-write))
+            :balance-write    (all (prevents :balance-write))}))
 
 (def single-threaded-simple-model
   (partial make-model
-           {::always     (all (generate-incoming single-threaded
-                                                 [:user {:amount 1}]
-                                                 [:user {:amount -1}])
-                              (always [:stuttering]))
-            :user        (all (triggers :db-read)
-                              (prevents :user))
-            :db-read     (all (triggers :db-write)
-                              (prevents :db-read))
-            :db-write    (all (triggers :state-write)
-                              (prevents :db-write))
-            :state-write (all (prevents :state-write))}))
+           {::always          (all (generate-incoming single-threaded
+                                                      [:process {:amount 1}]
+                                                      [:process {:amount -1}])
+                                   (always [:stuttering]))
+            :process          (all (triggers :accounting-read)
+                                   (prevents :process))
+            :accounting-read  (all (triggers :accounting-write)
+                                   (prevents :accounting-read))
+            :accounting-write (all (triggers :balance-write)
+                                   (prevents :accounting-write))
+            :balance-write    (all (prevents :balance-write))}))
 
 (def single-threaded+pagination-model
   (partial make-model
-           {::always                 (all (generate-incoming single-threaded
-                                                             [:user {:amount 1}]
-                                                             [:user {:amount -1}])
-                                          (always [:stuttering]))
-            :user                    (all (triggers :db-read)
-                                          (prevents :user))
-            :db-read                 (all (triggers :db-write
-                                                    :db-link-to-new-document
-                                                    :db-add-new-document)
-                                          (prevents :db-read))
-            :db-write                (all (triggers :state-write)
-                                          (prevents :db-write))
-            :db-link-to-new-document (all (prevents :db-link-to-new-document))
-            :db-add-new-document     (all (prevents :db-add-new-document))
-            :state-write             (all (prevents :state-write))}))
+           {::always                         (all (generate-incoming single-threaded
+                                                                     [:process {:amount 1}]
+                                                                     [:process {:amount -1}])
+                                                  (always [:stuttering]))
+            :process                         (all (triggers :accounting-read)
+                                                  (prevents :process))
+            :accounting-read                 (all (triggers :accounting-write
+                                                            :accounting-link-to-new-document
+                                                            :accounting-add-new-document)
+                                                  (prevents :accounting-read))
+            :accounting-write                (all (triggers :balance-write)
+                                                  (prevents :accounting-write))
+            :accounting-link-to-new-document (all (prevents :accounting-link-to-new-document))
+            :accounting-add-new-document     (all (prevents :accounting-add-new-document))
+            :balance-write                   (all (prevents :balance-write))}))
 
 (def single-threaded+safe-pagination-model
   (partial make-model
-           {::always                 (all (generate-incoming multi-threaded
-                                                             [:user {:amount 1}]
-                                                             [:user {:amount -1}])
-                                          (always [:stuttering]))
-            :user                    (all (triggers :db-read)
-                                          (prevents :user))
-            :db-read                 (& (choose (&* (triggers :db-write)
-                                                    (prevents :db-read))
-                                                (&* (triggers :db-add-new-document)
-                                                    (prevents :db-read)))
-                                        (all (prevents :db-read)))
-            :db-write                (all (only :state-write))
-            :db-add-new-document     (all (only :db-link-to-new-document))
-            :db-link-to-new-document (all (only :db-write))
-            :state-write             (all (prevents :state-write))}))
+           {::always                         (all (generate-incoming multi-threaded
+                                                                     [:process {:amount 1}]
+                                                                     [:process {:amount -1}])
+                                                  (always [:stuttering]))
+            :process                         (all (triggers :accounting-read)
+                                                  (prevents :process))
+            :accounting-read                 (& (choose (&* (triggers :accounting-write)
+                                                            (prevents :accounting-read))
+                                                        (&* (triggers :accounting-add-new-document)
+                                                            (prevents :accounting-read)))
+                                                (all (prevents :accounting-read)))
+            :accounting-write                (all (only :balance-write))
+            :accounting-add-new-document     (all (only :accounting-link-to-new-document))
+            :accounting-link-to-new-document (all (only :accounting-write))
+            :balance-write                   (all (prevents :balance-write))}))
 
 (def model+safe-pagination+gc-strict
   (partial make-model
-           {::always                  (all (generate-incoming single-threaded
-                                                              [:user {:amount 1}]
-                                                              [:user {:amount -1}])
-                                           (always [:stuttering]))
-            :user                     (all (triggers :db-read)
-                                           (prevents :user))
-            :db-read                  (& (choose (triggers :db-write)
-                                                 (triggers :db-add-new-document))
-                                         (all (prevents :db-read)))
-            :db-write                 (all (only :state-write))
-            :db-add-new-document      (all (only :db-link-to-new-document))
-            :db-link-to-new-document  (all (only :db-write))
-            :state-write              (all (only :db-gc-new-branch))
-            :db-gc-new-branch         (all (only :db-gc-link-to-new-branch))
-            :db-gc-link-to-new-branch (all (generate-incoming single-threaded
-                                                              [:user {:amount 1}]
-                                                              [:user {:amount -1}])
-                                           (prevents :db-gc-link-to-new-branch))}))
+           {::always                          (all (generate-incoming single-threaded
+                                                                      [:process {:amount 1}]
+                                                                      [:process {:amount -1}])
+                                                   (always [:stuttering]))
+            :process                          (all (triggers :accounting-read)
+                                                   (prevents :process))
+            :accounting-read                  (& (choose (triggers :accounting-write)
+                                                         (triggers :accounting-add-new-document))
+                                                 (all (prevents :accounting-read)))
+            :accounting-write                 (all (only :balance-write))
+            :accounting-add-new-document      (all (only :accounting-link-to-new-document))
+            :accounting-link-to-new-document  (all (only :accounting-write))
+            :balance-write                    (all (only :accounting-gc-new-branch))
+            :accounting-gc-new-branch         (all (only :accounting-gc-link-to-new-branch))
+            :accounting-gc-link-to-new-branch (all (generate-incoming single-threaded
+                                                                      [:process {:amount 1}]
+                                                                      [:process {:amount -1}])
+                                                   (prevents :accounting-gc-link-to-new-branch))}))
 
-(def single-threaded-inmemory-db-model
+(def single-threaded+inmemory-balance+eventually-consistent-accounting-model
   (partial make-model
-           {::always     (all (generate-incoming single-threaded
-                                                 [:user {:amount 1}]
-                                                 [:user {:amount -1}]))
-            :restart     (all (only))
-            :user        (& (choose (for-every-past :restart)
-                                    (triggers :db-read))
-                            (all (prevents :user)))
-            :db-read     (& (choose (for-every-past :restart)
-                                    (triggers :db-write))
-                            (all (prevents :db-read)))
-            :db-write    (& (choose (for-every-past :restart)
-                                    (triggers :state-write))
-                            (all (prevents :db-write)))
-            :state-write (& (choose (for-every-past :restart)
-                                    (only))
-                            (all (prevents :state-write)))}))
+           {::always          (all (generate-incoming single-threaded
+                                                      [:process {:amount 1}]
+                                                      [:process {:amount -1}]))
+            :restart          (all (only))
+            :process          (& (choose (for-every-past :restart)
+                                         (triggers :accounting-read))
+                                 (all (prevents :process)))
+            :accounting-read  (& (choose (for-every-past :restart)
+                                         (triggers :accounting-write))
+                                 (all (prevents :accounting-read)))
+            :accounting-write (& (choose (for-every-past :restart)
+                                         (triggers :balance-write))
+                                 (all (prevents :accounting-write)))
+            :balance-write    (& (choose (for-every-past :restart)
+                                         (only))
+                                 (all (prevents :balance-write)))}))
