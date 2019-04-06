@@ -2,8 +2,8 @@
   (:require [me.lomin.accounting-piggybank.accounting.core :as db]
             [me.lomin.accounting-piggybank.interpreter.properties :as props]))
 
-(def IN-MEMORY-VALUE [:state :val])
-(def IN-MEMORY-EVENTS [:state :events])
+(def IN-MEMORY-VALUE [:balance :amount])
+(def IN-MEMORY-EVENTS [:balance :events])
 
 (defn get-local-variable [state {k :key} v-name]
   (get-in state [k v-name]))
@@ -11,12 +11,12 @@
 (defn set-local-variable [state {k :key} v-name v-value]
   (assoc-in state [k v-name] v-value))
 
-(defn state-write [state {k :key value :val}]
+(defn state-write [state {k :key value :amount}]
   (-> state
       (update-in IN-MEMORY-VALUE + value)
       (update-in IN-MEMORY-EVENTS conj k)))
 
-(defn check-negative-balance [state {value :val :as data}]
+(defn check-negative-balance [state {value :amount :as data}]
   (if (neg? (+ value (get-in state IN-MEMORY-VALUE)))
     (set-local-variable state data :check-failed true)
     state))
@@ -24,7 +24,7 @@
 (defn db-read [state data]
   (set-local-variable state data :last-document (db/get-last-document state)))
 
-(defn db-write [state {k :key value :val :as data}]
+(defn db-write [state {k :key value :amount :as data}]
   (let [last-document (get-local-variable state data :last-document)
         self-link (:self last-document)
         updated-document (db/add-counter-value last-document k value)]

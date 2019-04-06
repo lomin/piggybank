@@ -2,4 +2,4 @@
   (:require [clojure.spec.alpha :as s]))
 
 (s/def ::events (s/coll-of keyword :kind set?))
-(s/def ::val int?)
+(s/def ::amount int?)

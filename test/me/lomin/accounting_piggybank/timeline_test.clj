@@ -20,59 +20,59 @@
   (is (= 44453
          (count (timeline/all-timelines-of-length 7 model/multi-threaded-simple-model))))
   (is (= #{[[:stuttering]]
-           [[:user {:id 0, :val 1}]]
-           [[:user {:id 1, :val -1}]]}
+           [[:user {:id 0, :amount 1}]]
+           [[:user {:id 1, :amount -1}]]}
          (successor-timelines model/multi-threaded-simple-model
                               [])))
 
   (is (= #{[[:stuttering] [:stuttering]]
-           [[:stuttering] [:user {:id 0, :val 1}]]
-           [[:stuttering] [:user {:id 1, :val -1}]]}
+           [[:stuttering] [:user {:id 0, :amount 1}]]
+           [[:stuttering] [:user {:id 1, :amount -1}]]}
          (successor-timelines model/multi-threaded-simple-model
                               [[:stuttering]])))
 
   (is (= #{[[:stuttering] [:stuttering] [:stuttering]]
-           [[:stuttering] [:stuttering] [:user {:id 0, :val 1}]]
-           [[:stuttering] [:stuttering] [:user {:id 1, :val -1}]]}
+           [[:stuttering] [:stuttering] [:user {:id 0, :amount 1}]]
+           [[:stuttering] [:stuttering] [:user {:id 1, :amount -1}]]}
          (successor-timelines model/multi-threaded-simple-model
                               [[:stuttering] [:stuttering]])))
 
-  (is (= #{[[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}]]
-           [[:user {:id 0, :val 1}] [:stuttering]]
-           [[:user {:id 0, :val 1}] [:user {:id 1, :val 1}]]
-           [[:user {:id 0, :val 1}] [:user {:id 2, :val -1}]]}
+  (is (= #{[[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:stuttering]]
+           [[:user {:id 0, :amount 1}] [:user {:id 1, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:user {:id 2, :amount -1}]]}
          (successor-timelines model/multi-threaded-simple-model
-                              [[:user {:id 0 :val 1}]])))
+                              [[:user {:id 0 :amount 1}]])))
 
-  (is (= #{[[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}] [:db-write {:id 0, :val 1}]]
-           [[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}] [:stuttering]]
-           [[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}] [:user {:id 1, :val 1}]]
-           [[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}] [:user {:id 2, :val -1}]]}
+  (is (= #{[[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}] [:db-write {:id 0, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}] [:stuttering]]
+           [[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}] [:user {:id 1, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}] [:user {:id 2, :amount -1}]]}
          (successor-timelines model/multi-threaded-simple-model
-                              [[:user {:id 0 :val 1}] [:db-read {:id 0 :val 1}]]))))
+                              [[:user {:id 0 :amount 1}] [:db-read {:id 0 :amount 1}]]))))
 
 (deftest ^:unit make-all-timeline-test
   (is (= #{[[:stuttering] [:stuttering]]
-           [[:stuttering] [:user {:id 0, :val 1}]]
-           [[:stuttering] [:user {:id 1, :val -1}]]
-           [[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}]]
-           [[:user {:id 0, :val 1}] [:stuttering]]
-           [[:user {:id 0, :val 1}] [:user {:id 1, :val 1}]]
-           [[:user {:id 0, :val 1}] [:user {:id 2, :val -1}]]}
+           [[:stuttering] [:user {:id 0, :amount 1}]]
+           [[:stuttering] [:user {:id 1, :amount -1}]]
+           [[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:stuttering]]
+           [[:user {:id 0, :amount 1}] [:user {:id 1, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:user {:id 2, :amount -1}]]}
          (second (timeline/infinite-timelines-seq model/multi-threaded-simple-model
-                                                  #{[[:stuttering]] [[:user {:id 0 :val 1}]]}))))
+                                                  #{[[:stuttering]] [[:user {:id 0 :amount 1}]]}))))
 
   (is (= #{[[:stuttering] [:stuttering]]
-           [[:stuttering] [:user {:id 0, :val 1}]]
-           [[:stuttering] [:user {:id 1, :val -1}]]
-           [[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}]]
-           [[:user {:id 0, :val 1}] [:stuttering]]
-           [[:user {:id 0, :val 1}] [:user {:id 1, :val 1}]]
-           [[:user {:id 0, :val 1}] [:user {:id 2, :val -1}]]
-           [[:user {:id 1, :val -1}] [:db-read {:id 1, :val -1}]]
-           [[:user {:id 1, :val -1}] [:stuttering]]
-           [[:user {:id 1, :val -1}] [:user {:id 2, :val 1}]]
-           [[:user {:id 1, :val -1}] [:user {:id 3, :val -1}]]}
+           [[:stuttering] [:user {:id 0, :amount 1}]]
+           [[:stuttering] [:user {:id 1, :amount -1}]]
+           [[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:stuttering]]
+           [[:user {:id 0, :amount 1}] [:user {:id 1, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:user {:id 2, :amount -1}]]
+           [[:user {:id 1, :amount -1}] [:db-read {:id 1, :amount -1}]]
+           [[:user {:id 1, :amount -1}] [:stuttering]]
+           [[:user {:id 1, :amount -1}] [:user {:id 2, :amount 1}]]
+           [[:user {:id 1, :amount -1}] [:user {:id 3, :amount -1}]]}
          (nth (timeline/infinite-timelines-seq model/multi-threaded-simple-model
                                                timeline/EMPTY-TIMELINES)
               2))))
@@ -82,32 +82,32 @@
          (count (timeline/all-timelines-of-length 10 model/single-threaded-simple-model))))
 
   (is (= #{[[:stuttering]]
-           [[:user {:id 0, :val 1}]]
-           [[:user {:id 1, :val -1}]]}
+           [[:user {:id 0, :amount 1}]]
+           [[:user {:id 1, :amount -1}]]}
          (successor-timelines model/single-threaded-simple-model
                               [])))
 
   (is (= #{[[:stuttering] [:stuttering]]
-           [[:stuttering] [:user {:id 0, :val 1}]]
-           [[:stuttering] [:user {:id 1, :val -1}]]}
+           [[:stuttering] [:user {:id 0, :amount 1}]]
+           [[:stuttering] [:user {:id 1, :amount -1}]]}
          (successor-timelines model/single-threaded-simple-model
                               [[:stuttering]])))
 
   (is (= #{[[:stuttering] [:stuttering] [:stuttering]]
-           [[:stuttering] [:stuttering] [:user {:id 0, :val 1}]]
-           [[:stuttering] [:stuttering] [:user {:id 1, :val -1}]]}
+           [[:stuttering] [:stuttering] [:user {:id 0, :amount 1}]]
+           [[:stuttering] [:stuttering] [:user {:id 1, :amount -1}]]}
          (successor-timelines model/single-threaded-simple-model
                               [[:stuttering] [:stuttering]])))
 
-  (is (= #{[[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}]]
-           [[:user {:id 0, :val 1}] [:stuttering]]}
+  (is (= #{[[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:stuttering]]}
          (successor-timelines model/single-threaded-simple-model
-                              [[:user {:id 0 :val 1}]])))
+                              [[:user {:id 0 :amount 1}]])))
 
-  (is (= #{[[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}] [:db-write {:id 0, :val 1}]]
-           [[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}] [:stuttering]]}
+  (is (= #{[[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}] [:db-write {:id 0, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}] [:stuttering]]}
          (successor-timelines model/single-threaded-simple-model
-                              [[:user {:id 0 :val 1}] [:db-read {:id 0 :val 1}]]))))
+                              [[:user {:id 0 :amount 1}] [:db-read {:id 0 :amount 1}]]))))
 
 (deftest ^:unit pagination-test
   (is (= 3

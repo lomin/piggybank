@@ -19,7 +19,7 @@
        (describe* [_] (binding [s/*coll-check-limit* coll-check-limit]
                         (s/describe* every*)))))))
 
-(s/def ::event (s/spec (s/cat :type keyword? :data (s/? map?))))
+(s/def ::event (s/spec (s/cat :type keyword? :transfers (s/? map?))))
 (s/def ::event-set (s/coll-of ::event :kind set?))
 (s/def ::timeline (s/coll-of ::event :kind vector?))
 (s/def ::timeline-set (s/coll-of ::timeline :kind set?))

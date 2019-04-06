@@ -45,31 +45,31 @@
 
 (deftest ^:unit model-unit-test
   (is (= #{[[:stuttering] [:stuttering]]
-           [[:stuttering] [:user {:id 0, :val 1}]]
-           [[:stuttering] [:user {:id 1, :val -1}]]
-           [[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}]]
-           [[:user {:id 0, :val 1}] [:stuttering]]
-           [[:user {:id 0, :val 1}] [:user {:id 1, :val 1}]]
-           [[:user {:id 0, :val 1}] [:user {:id 2, :val -1}]]
-           [[:user {:id 1, :val -1}] [:db-read {:id 1, :val -1}]]
-           [[:user {:id 1, :val -1}] [:stuttering]]
-           [[:user {:id 1, :val -1}] [:user {:id 2, :val 1}]]
-           [[:user {:id 1, :val -1}] [:user {:id 3, :val -1}]]}
+           [[:stuttering] [:user {:id 0, :amount 1}]]
+           [[:stuttering] [:user {:id 1, :amount -1}]]
+           [[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:stuttering]]
+           [[:user {:id 0, :amount 1}] [:user {:id 1, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:user {:id 2, :amount -1}]]
+           [[:user {:id 1, :amount -1}] [:db-read {:id 1, :amount -1}]]
+           [[:user {:id 1, :amount -1}] [:stuttering]]
+           [[:user {:id 1, :amount -1}] [:user {:id 2, :amount 1}]]
+           [[:user {:id 1, :amount -1}] [:user {:id 3, :amount -1}]]}
          (timeline/all-timelines-of-length 2 model/multi-threaded-simple-model)))
   (is (= #{[[:stuttering] [:stuttering]]
-           [[:stuttering] [:user {:id 0, :val 1}]]
-           [[:stuttering] [:user {:id 1, :val -1}]]
-           [[:user {:id 0, :val 1}] [:db-read {:id 0, :val 1}]]
-           [[:user {:id 0, :val 1}] [:stuttering]]
-           [[:user {:id 1, :val -1}] [:db-read {:id 1, :val -1}]]
-           [[:user {:id 1, :val -1}] [:stuttering]]}
+           [[:stuttering] [:user {:id 0, :amount 1}]]
+           [[:stuttering] [:user {:id 1, :amount -1}]]
+           [[:user {:id 0, :amount 1}] [:db-read {:id 0, :amount 1}]]
+           [[:user {:id 0, :amount 1}] [:stuttering]]
+           [[:user {:id 1, :amount -1}] [:db-read {:id 1, :amount -1}]]
+           [[:user {:id 1, :amount -1}] [:stuttering]]}
          (timeline/all-timelines-of-length 2 model/single-threaded-simple-model))))
 
 (deftest ^:unit choose-test
   (let [choose-model (partial make-model
                               {::model/always (all (generate-incoming multi-threaded
-                                                                      [:user {:val 1}]
-                                                                      [:user {:val -1}])
+                                                                      [:user {:amount 1}]
+                                                                      [:user {:amount -1}])
                                                    (always [:stuttering]))
                                :user          (choose (&* (triggers :db-read)
                                                           (prevents :user))
@@ -93,27 +93,27 @@
 
 (deftest ^:model multi-threaded-model-test
   (is (= {:check-count       951
-          :accounting        {:branch-0 {:document-0 {:data [[#{:some-id-0} 2]]
-                                                      :next [:branch-1 :document-1]
-                                                      :self [:branch-0 :document-0]}}
-                              :branch-1 {:document-0 {:data [[#{:some-id-0} 2]]
-                                                      :next [:branch-1 :document-1]
-                                                      :self [:branch-0 :document-0]}
-                                         :document-1 {:data [[#{:some-id-1} -1] [#{:2} -1] [#{:4} -1]]
-                                                      :next [:branch-1 :document-1]
-                                                      :self [:branch-1 :document-1]}}
+          :accounting        {:branch-0 {:document-0 {:transfers [[#{:some-id-0} 2]]
+                                                      :next      [:branch-1 :document-1]
+                                                      :self      [:branch-0 :document-0]}}
+                              :branch-1 {:document-0 {:transfers [[#{:some-id-0} 2]]
+                                                      :next      [:branch-1 :document-1]
+                                                      :self      [:branch-0 :document-0]}
+                                         :document-1 {:transfers [[#{:some-id-1} -1] [#{:2} -1] [#{:4} -1]]
+                                                      :next      [:branch-1 :document-1]
+                                                      :self      [:branch-1 :document-1]}}
                               :meta     {:meta-document {:branch-0 [:branch-0 :document-0]
                                                          :branch-1 [:branch-1 :document-0]
                                                          :first    [:branch-0 :document-0]}}}
           :property-violated {:name     :db-state-must-always-be>=0
-                              :timeline [[:user {:id 0, :val 1}]
-                                         [:user {:id 2, :val -1}]
-                                         [:db-read {:id 2, :val -1}]
-                                         [:db-write {:id 2, :val -1}]
-                                         [:user {:id 4, :val -1}]
-                                         [:db-read {:id 4, :val -1}]
-                                         [:db-write {:id 4, :val -1}]]}}
-         (check model/multi-threaded-simple-model 7 [:check-count :property-violated :accounting :max-check-count :state]))))
+                              :timeline [[:user {:id 0, :amount 1}]
+                                         [:user {:id 2, :amount -1}]
+                                         [:db-read {:id 2, :amount -1}]
+                                         [:db-write {:id 2, :amount -1}]
+                                         [:user {:id 4, :amount -1}]
+                                         [:db-read {:id 4, :amount -1}]
+                                         [:db-write {:id 4, :amount -1}]]}}
+         (check model/multi-threaded-simple-model 7 [:check-count :property-violated :accounting :max-check-count :balance]))))
 
 (deftest ^:model single-threaded-model-test
   (is (= {:check-count 33670 :max-check-count 33670}
@@ -121,28 +121,28 @@
 
 (deftest ^:model single-threaded+pagination-model-test
   (is (= {:check-count       15
-          :accounting        {:branch-0 {:document-0 {:data [[#{:some-id-0} 2]]
-                                                      :next [:branch-1 :document-1]
-                                                      :self [:branch-0 :document-0]}}
-                              :branch-1 {:1          {:data [], :next [:branch-1 :1], :self [:branch-1 :1]}
-                                         :document-0 {:data [[#{:some-id-0} 2]]
-                                                      :next [:branch-1 :document-1]
-                                                      :self [:branch-0 :document-0]}
-                                         :document-1 {:data [[#{:some-id-1} -1] [#{:1} -1]]
-                                                      :next [:branch-1 :2]
-                                                      :self [:branch-1 :document-1]}}
+          :accounting        {:branch-0 {:document-0 {:transfers [[#{:some-id-0} 2]]
+                                                      :next      [:branch-1 :document-1]
+                                                      :self      [:branch-0 :document-0]}}
+                              :branch-1 {:1          {:transfers [], :next [:branch-1 :1], :self [:branch-1 :1]}
+                                         :document-0 {:transfers [[#{:some-id-0} 2]]
+                                                      :next      [:branch-1 :document-1]
+                                                      :self      [:branch-0 :document-0]}
+                                         :document-1 {:transfers [[#{:some-id-1} -1] [#{:1} -1]]
+                                                      :next      [:branch-1 :2]
+                                                      :self      [:branch-1 :document-1]}}
                               :meta     {:meta-document {:branch-0 [:branch-0 :document-0]
                                                          :branch-1 [:branch-1 :document-0]
                                                          :first    [:branch-0 :document-0]}}}
           :property-violated {:name     :all-links-must-point-to-an-existing-document
-                              :timeline [[:user {:id 1, :val -1}]
-                                         [:db-read {:id 1, :val -1}]
-                                         [:db-write {:id 1, :val -1}]
-                                         [:db-add-new-document {:id 1, :val -1}]
-                                         [:state-write {:id 1, :val -1}]
-                                         [:user {:id 2, :val 1}]
-                                         [:db-read {:id 2, :val 1}]
-                                         [:db-link-to-new-document {:id 2, :val 1}]]}}
+                              :timeline [[:user {:id 1, :amount -1}]
+                                         [:db-read {:id 1, :amount -1}]
+                                         [:db-write {:id 1, :amount -1}]
+                                         [:db-add-new-document {:id 1, :amount -1}]
+                                         [:state-write {:id 1, :amount -1}]
+                                         [:user {:id 2, :amount 1}]
+                                         [:db-read {:id 2, :amount 1}]
+                                         [:db-link-to-new-document {:id 2, :amount 1}]]}}
          (check model/single-threaded+pagination-model 8 [:check-count :property-violated :accounting]))))
 
 (deftest ^:model single-threaded+safe-pagination-model-test

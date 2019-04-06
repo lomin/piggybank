@@ -10,39 +10,39 @@
 (deftest ^:unit property-db-state>=0-test
   (is (= true (props/db-state>=0? spec/example-context)))
   (is (= false
-         (props/db-state>=0? {:accounting {:branch-0 {:document-0 {:data [[#{:some-id-0} 2]]
-                                                                   :next         [:branch-1 :document-1]
-                                                                   :self         [:branch-0 :document-0]}}
-                                           :branch-1         {:document-1 {:data [[#{:some-id-1} -1] [#{:some-id-2} -2]]
-                                                                           :next [:branch-1 :document-1]
-                                                                           :self [:branch-1 :document-1]}}
+         (props/db-state>=0? {:accounting {:branch-0 {:document-0 {:transfers [[#{:some-id-0} 2]]
+                                                                   :next      [:branch-1 :document-1]
+                                                                   :self      [:branch-0 :document-0]}}
+                                           :branch-1         {:document-1 {:transfers [[#{:some-id-1} -1] [#{:some-id-2} -2]]
+                                                                           :next      [:branch-1 :document-1]
+                                                                           :self      [:branch-1 :document-1]}}
                                            :meta             {:meta-document {:first [:branch-0 :document-0]}}}}))))
 
 (deftest ^:unit property-all-documents-linked-test
   (is (= true (props/all-links-exist? spec/example-context)))
   (is (= false
-         (props/all-links-exist? {:accounting {:branch-0 {:document-0 {:next [:branch-1 :document-1]
-                                                                       :self         [:branch-0 :document-0]
-                                                                       :data         [[#{:some-id-0} 2]]}}
-                                               :branch-1         {:document-1 {:next [:branch-1 :not-there]
-                                                                               :self [:branch-1 :document-1]
-                                                                               :data [[#{:some-id-1} -1]]}}
+         (props/all-links-exist? {:accounting {:branch-0 {:document-0 {:next      [:branch-1 :document-1]
+                                                                       :self      [:branch-0 :document-0]
+                                                                       :transfers [[#{:some-id-0} 2]]}}
+                                               :branch-1         {:document-1 {:next      [:branch-1 :not-there]
+                                                                               :self      [:branch-1 :document-1]
+                                                                               :transfers [[#{:some-id-1} -1]]}}
                                                :meta             {:meta-document {:first [:branch-0 :document-0]}}}}))))
 
 (deftest ^:unit property-no-lost-updates-test
   (is (= false (props/lost-updates? spec/example-context)))
   (is (= true
-         (props/lost-updates? {:accounting {:branch-0 {:unlinked {:next [:branch-1 :document-1]
-                                                                  :self    [:branch-0 :document-0]
-                                                                  :data    [[#{:unlinked} 0]]}
-                                                       :document-0    {:next [:branch-1 :document-1]
-                                                                       :self [:branch-0 :document-0]
-                                                                       :data [[#{:some-id-0} 2]]}}
-                                            :branch-1      {:document-1 {:next [:branch-1 :document-1]
-                                                                         :self [:branch-1 :document-1]
-                                                                         :data [[#{:some-id-1} -1]]}}
-                                            :meta          {:meta-document {:first [:branch-0 :document-0]}}}
-                               :state      {:val    1
+         (props/lost-updates? {:accounting {:branch-0 {:unlinked   {:next      [:branch-1 :document-1]
+                                                                    :self      [:branch-0 :document-0]
+                                                                    :transfers [[#{:unlinked} 0]]}
+                                                       :document-0 {:next      [:branch-1 :document-1]
+                                                                    :self      [:branch-0 :document-0]
+                                                                    :transfers [[#{:some-id-0} 2]]}}
+                                            :branch-1 {:document-1 {:next      [:branch-1 :document-1]
+                                                                    :self      [:branch-1 :document-1]
+                                                                    :transfers [[#{:some-id-1} -1]]}}
+                                            :meta     {:meta-document {:first [:branch-0 :document-0]}}}
+                               :balance    {:amount 1
                                             :events #{:some-id-0 :some-id-1 :unlinked}}}))))
 
 (deftest ^:unit document-database-is-only-on-consistent-on-document-level-test

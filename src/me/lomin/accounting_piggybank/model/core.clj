@@ -126,8 +126,8 @@
 (def multi-threaded-simple-model
   (partial make-model
            {::always     (all (generate-incoming multi-threaded
-                                                 [:user {:val 1}]
-                                                 [:user {:val -1}])
+                                                 [:user {:amount 1}]
+                                                 [:user {:amount -1}])
                               (always [:stuttering]))
             :user        (all (triggers :db-read))
             :db-read     (all (triggers :db-write)
@@ -139,8 +139,8 @@
 (def single-threaded-simple-model
   (partial make-model
            {::always     (all (generate-incoming single-threaded
-                                                 [:user {:val 1}]
-                                                 [:user {:val -1}])
+                                                 [:user {:amount 1}]
+                                                 [:user {:amount -1}])
                               (always [:stuttering]))
             :user        (all (triggers :db-read)
                               (prevents :user))
@@ -153,8 +153,8 @@
 (def single-threaded+pagination-model
   (partial make-model
            {::always                 (all (generate-incoming single-threaded
-                                                             [:user {:val 1}]
-                                                             [:user {:val -1}])
+                                                             [:user {:amount 1}]
+                                                             [:user {:amount -1}])
                                           (always [:stuttering]))
             :user                    (all (triggers :db-read)
                                           (prevents :user))
@@ -171,8 +171,8 @@
 (def single-threaded+safe-pagination-model
   (partial make-model
            {::always                 (all (generate-incoming multi-threaded
-                                                             [:user {:val 1}]
-                                                             [:user {:val -1}])
+                                                             [:user {:amount 1}]
+                                                             [:user {:amount -1}])
                                           (always [:stuttering]))
             :user                    (all (triggers :db-read)
                                           (prevents :user))
@@ -189,8 +189,8 @@
 (def model+safe-pagination+gc
   (partial make-model
            {::always                  (all (generate-incoming single-threaded
-                                                              [:user {:val 1}]
-                                                              [:user {:val -1}])
+                                                              [:user {:amount 1}]
+                                                              [:user {:amount -1}])
                                            (always [:stuttering]))
             :user                     (all (triggers :db-read)
                                            (prevents :user))
@@ -211,8 +211,8 @@
 (def model+safe-pagination+gc-strict
   (partial make-model
            {::always                  (all (generate-incoming single-threaded
-                                                              [:user {:val 1}]
-                                                              [:user {:val -1}])
+                                                              [:user {:amount 1}]
+                                                              [:user {:amount -1}])
                                            (always [:stuttering]))
             :user                     (all (triggers :db-read)
                                            (prevents :user))
@@ -225,6 +225,6 @@
             :state-write              (all (only :db-gc-new-branch))
             :db-gc-new-branch         (all (only :db-gc-link-to-new-branch))
             :db-gc-link-to-new-branch (all (generate-incoming single-threaded
-                                                              [:user {:val 1}]
-                                                              [:user {:val -1}])
+                                                              [:user {:amount 1}]
+                                                              [:user {:amount -1}])
                                            (prevents :db-gc-link-to-new-branch))}))

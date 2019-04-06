@@ -27,7 +27,7 @@
   (last (follow-next-links state)))
 
 (defn add-counter-value [document k value]
-  (update document :data conj [#{k} value]))
+  (update document :transfers conj [#{k} value]))
 
 (defn id->key [id]
   (keyword (str id)))
@@ -36,7 +36,7 @@
   [k (id->key (str (name k) "-init"))])
 
 (defn make-new-document [link data]
-  {:next link :self link :data data})
+  {:next link :self link :transfers data})
 
 (defn insert-new-document [state link & data]
   (overwrite-document-by-link state

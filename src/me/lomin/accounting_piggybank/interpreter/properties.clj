@@ -26,8 +26,8 @@
   (set/superset? (all-existing-documents state)
                  (all-linked-documents state)))
 
-(def get-summands (comp (mapcat :data) (map second)))
-(def get-event-ids (comp (mapcat :data) (mapcat first)))
+(def get-summands (comp (mapcat :transfers) (map second)))
+(def get-event-ids (comp (mapcat :transfers) (mapcat first)))
 
 (defn add-all-summands [all-documents]
   (transduce get-summands + all-documents))
@@ -41,7 +41,7 @@
   (into #{} get-event-ids (db/follow-next-links universe)))
 
 (defn alle-event-ids-aus-saldo [universe]
-  (get-in universe [:state :events]))
+  (get-in universe [:balance :events]))
 
 (defn lost-updates? [universe]
   (nicht (set/superset? (alle-event-ids-über-alle-bücher universe)
