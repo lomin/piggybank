@@ -124,26 +124,26 @@
          (count (timeline/all-timelines-of-length 3 model/single-threaded+pagination-model)))))
 
 (deftest ^:unit timeline-dependent-of-past-test
-  (is (=  #{[[:user {:amount 1, :process-id 0}]
-             [:state-write {:amount 1, :process-id 0}]
-             [:restart 0]]
-            [[:user {:amount 1, :process-id 0}]
-             [:state-write {:amount 1, :process-id 0}]
-             [:restart 1]]
-            [[:user {:amount 1, :process-id 0}]
-             [:state-write {:amount 1, :process-id 0}]
-             [:restart 2]]
-            [[:user {:amount 1, :process-id 0}]
-             [:state-write {:amount 1, :process-id 0}]
-             [:user {:amount 1, :process-id 1}]]}
-          (timeline/all-timelines-of-length 3
-                                            (partial model/make-model
-                                                     {::model/always (all (generate-incoming single-threaded
-                                                                                             [:user {:amount 1}]))
-                                                      :restart       (all (only))
-                                                      :user          (& (choose (for-every-past :restart)
-                                                                                (triggers :state-write))
-                                                                        (all (prevents :user)))
-                                                      :state-write   (& (choose (for-every-past :restart)
-                                                                                (only))
-                                                                        (all (prevents :state-write)))})))))
+  (is (=   #{[[:user {:amount 1, :process-id 0}]
+              [:state-write {:amount 1, :process-id 0}]
+              [:restart {:past 0}]]
+             [[:user {:amount 1, :process-id 0}]
+              [:state-write {:amount 1, :process-id 0}]
+              [:restart {:past 1}]]
+             [[:user {:amount 1, :process-id 0}]
+              [:state-write {:amount 1, :process-id 0}]
+              [:restart {:past 2}]]
+             [[:user {:amount 1, :process-id 0}]
+              [:state-write {:amount 1, :process-id 0}]
+              [:user {:amount 1, :process-id 1}]]}
+           (timeline/all-timelines-of-length 3
+                                             (partial model/make-model
+                                                      {::model/always (all (generate-incoming single-threaded
+                                                                                              [:user {:amount 1}]))
+                                                       :restart       (all (only))
+                                                       :user          (& (choose (for-every-past :restart)
+                                                                                 (triggers :state-write))
+                                                                         (all (prevents :user)))
+                                                       :state-write   (& (choose (for-every-past :restart)
+                                                                                 (only))
+                                                                         (all (prevents :state-write)))})))))

@@ -101,3 +101,39 @@
                                                  [:db-read {:process-id 7, :amount 1}]
                                                  [:db-add-new-document {:process-id 7, :amount 1}]
                                                  [:db-link-to-new-document {:process-id 7, :amount 1}]])))))
+
+(defn interpret-timeline [state timeline]
+  (dissoc (intp/interpret-timeline state timeline)
+          :history
+          :check-count))
+
+(deftest ^:unit restarting-a-system-without-strong-consistency-guarantees-test
+  (testing "restarting a system with an inmemory-db and an eventually consistent database"
+    (is (=* test-state
+            (interpret-timeline test-state [[:restart {:past 0}]])))
+    (is (= (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
+                                           [:db-write {:process-id 7 :amount 5}]
+                                           [:state-write {:process-id 7 :amount 5}]])
+           (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
+                                           [:db-write {:process-id 7 :amount 5}]
+                                           [:state-write {:process-id 7 :amount 5}]
+                                           [:restart {:past 0}]])))
+
+    (is (= (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
+                                           [:db-write {:process-id 7 :amount 5}]
+                                           [:state-write {:process-id 7 :amount 5}]])
+           (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
+                                           [:db-write {:process-id 7 :amount 5}]
+                                           [:state-write {:process-id 7 :amount 5}]
+                                           [:restart {:past 1}]])))
+
+    (is (= (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
+                                           [:db-write {:process-id 7 :amount 5}]])
+           (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
+                                           [:db-write {:process-id 7 :amount 5}]
+                                           [:state-write {:process-id 7 :amount 5}]
+                                           [:restart {:past 2}]])
+           (interpret-timeline test-state [[:db-read {:process-id 7 :amount 5}]
+                                           [:db-write {:process-id 7 :amount 5}]
+                                           [:state-write {:process-id 7 :amount 5}]
+                                           [:restart {:past 3}]])))))

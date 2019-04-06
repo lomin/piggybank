@@ -3,8 +3,8 @@
             [me.lomin.accounting-piggybank.accounting.core :as accounting]
             [me.lomin.accounting-piggybank.interpreter.properties :as props]))
 
-(def IN-MEMORY-VALUE [:balance :amount])
-(def IN-MEMORY-EVENTS [:balance :events])
+(def IN-MEMORY-BALANCE [:balance :amount])
+(def IN-MEMORY-PIDS [:balance :events])
 
 (defn get-local-variable [state {pid :process-id} v-name]
   (get-in state [pid v-name]))
@@ -14,11 +14,11 @@
 
 (defn state-write [state {pid :process-id value :amount}]
   (-> state
-      (update-in IN-MEMORY-VALUE + value)
-      (update-in IN-MEMORY-EVENTS conj pid)))
+      (update-in IN-MEMORY-BALANCE + value)
+      (update-in IN-MEMORY-PIDS conj pid)))
 
 (defn check-negative-balance [state {value :amount :as data}]
-  (if (neg? (+ value (get-in state IN-MEMORY-VALUE)))
+  (if (neg? (+ value (get-in state IN-MEMORY-BALANCE)))
     (set-local-variable state data :check-failed true)
     state))
 
@@ -51,11 +51,22 @@
   (let [branch-init-link (db/make-branch-init-link data)]
     (db/insert-new-document state
                             branch-init-link
-                            [(get-in state IN-MEMORY-EVENTS)
-                             (get-in state IN-MEMORY-VALUE)])))
+                            [(get-in state IN-MEMORY-PIDS)
+                             (get-in state IN-MEMORY-BALANCE)])))
 
 (defn db-gc-link-to-new-branch [state data]
   (db/insert-branch-in-meta state (db/make-branch-init-link data)))
+
+(defn restart [state {:keys [past]}]
+  (let [past-state (if (and (:history state) (< 0 past))
+                     (nth (:history state) (dec past))
+                     state)
+        documents (accounting/follow-next-links past-state)
+        ids (into #{} props/get-event-ids documents)
+        balance (props/add-all-summands documents)]
+    (-> state
+        (assoc-in IN-MEMORY-BALANCE balance)
+        (assoc-in IN-MEMORY-PIDS ids))))
 
 (defn check-failed? [state data]
   (get-local-variable state data :check-failed))
@@ -72,6 +83,7 @@
       :db-add-new-document (db-add-new-document state data)
       :db-gc-new-branch (db-gc-new-branch state data)
       :db-gc-link-to-new-branch (db-gc-link-to-new-branch state data)
+      :restart (restart state data)
       state)))
 
 (def inc-or-0 (fnil inc 0))

@@ -81,7 +81,7 @@
 (defn for-every-past [& events]
   (fn [event-candidates {:keys [timeline]}]
     (set/union event-candidates
-               (set (map vec
+               (set (map (fn [[event i]] [event {:past i}])
                          (combo/cartesian-product events
                                                   (range (inc (count timeline)))))))))
 
@@ -219,8 +219,7 @@
   (partial make-model
            {::always     (all (generate-incoming single-threaded
                                                  [:user {:amount 1}]
-                                                 [:user {:amount -1}])
-                              (always [:stuttering]))
+                                                 [:user {:amount -1}]))
             :restart     (all (only))
             :user        (& (choose (for-every-past :restart)
                                     (triggers :db-read))

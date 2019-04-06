@@ -167,5 +167,18 @@
            (check model/model+safe-pagination+gc-strict 10 [:check-count :property-violated :accounting])))))
 
 (deftest ^:model single-threaded-inmemory-db-model-test
-  (is (= {:check-count 58280}
-         (check model/single-threaded-inmemory-db-model 8 [:check-count :property-violated]))))
+  (is (= {:check-count       25223
+          :property-violated {:name     :db-state-must-always-be>=0
+                              :timeline [[:user {:amount 1, :process-id 0}]
+                                         [:db-read {:amount 1, :process-id 0}]
+                                         [:db-write {:amount 1, :process-id 0}]
+                                         [:state-write {:amount 1, :process-id 0}]
+                                         [:user {:amount -1, :process-id 2}]
+                                         [:db-read {:amount -1, :process-id 2}]
+                                         [:db-write {:amount -1, :process-id 2}]
+                                         [:state-write {:amount -1, :process-id 2}]
+                                         [:restart {:past 5}]
+                                         [:user {:amount -1, :process-id 4}]
+                                         [:db-read {:amount -1, :process-id 4}]
+                                         [:db-write {:amount -1, :process-id 4}]]}}
+         (check model/single-threaded-inmemory-db-model 12 [:check-count :property-violated]))))
