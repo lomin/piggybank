@@ -1,6 +1,7 @@
 (ns me.lomin.accounting-piggybank.model.core
   (:require [clojure.math.combinatorics :as combo]
             [clojure.set :as set]
+            [me.lomin.accounting-piggybank.accounting.spec :as accounting-spec]
             [me.lomin.accounting-piggybank.model.logic :refer [for-all there-exists]]))
 
 (defn get-event-id [[_ data]]
@@ -76,6 +77,13 @@
     (set/union event-candidates
                (set (when (pred context)
                       (generate-incoming-events-from timeline events))))))
+
+(defn for-every-past [& events]
+  (fn [event-candidates {:keys [timeline]}]
+    (set/union event-candidates
+               (set (map vec
+                         (combo/cartesian-product events
+                                                  (range (inc (count timeline)))))))))
 
 (defn triggers [& event-types]
   (combine-events-with set/union event-types))
@@ -206,3 +214,23 @@
                                                               [:user {:amount 1}]
                                                               [:user {:amount -1}])
                                            (prevents :db-gc-link-to-new-branch))}))
+
+(def single-threaded-inmemory-db-model
+  (partial make-model
+           {::always     (all (generate-incoming single-threaded
+                                                 [:user {:amount 1}]
+                                                 [:user {:amount -1}])
+                              (always [:stuttering]))
+            :restart     (all (only))
+            :user        (& (choose (for-every-past :restart)
+                                    (triggers :db-read))
+                            (all (prevents :user)))
+            :db-read     (& (choose (for-every-past :restart)
+                                    (triggers :db-write))
+                            (all (prevents :db-read)))
+            :db-write    (& (choose (for-every-past :restart)
+                                    (triggers :state-write))
+                            (all (prevents :db-write)))
+            :state-write (& (choose (for-every-past :restart)
+                                    (only))
+                            (all (prevents :state-write)))}))

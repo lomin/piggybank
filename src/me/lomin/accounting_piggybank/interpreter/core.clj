@@ -80,7 +80,7 @@
   (update state :check-count inc-or-0))
 
 (defn add-previous-state [state previous-state]
-  (assoc state :previous-state (dissoc previous-state :previous-state)))
+  (update state :history (fnil conj (list)) (dissoc previous-state :history)))
 
 (defn add-property-violation [state violation timeline]
   (assoc state :property-violated {:name violation :timeline timeline}))

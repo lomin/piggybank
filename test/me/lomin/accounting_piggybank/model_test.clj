@@ -165,3 +165,7 @@
                                            [:db-write {:amount -1, :process-id 2}]
                                            [:state-write {:amount -1, :process-id 2}]]}}
            (check model/model+safe-pagination+gc-strict 10 [:check-count :property-violated :accounting])))))
+
+(deftest ^:model single-threaded-inmemory-db-model-test
+  (is (= {:check-count 58280}
+         (check model/single-threaded-inmemory-db-model 8 [:check-count :property-violated]))))

@@ -49,19 +49,20 @@
   (is (= false (props/more-than-one-document-change-per-timeslot? spec/example-universe)))
   (is (= false
          (props/more-than-one-document-change-per-timeslot? (assoc spec/example-universe
-                                                                   :previous-state spec/example-universe))))
+                                                                   :history
+                                                                   (list spec/example-universe)))))
   (is (= false
          (props/more-than-one-document-change-per-timeslot? (-> spec/example-universe
-                                                                (assoc :previous-state spec/example-universe)
+                                                                (assoc :history (list spec/example-universe))
                                                                 (assoc-in [:accounting [:cash-up 0] [:document 0] :test] "test")))))
   (is (= true
          (props/more-than-one-document-change-per-timeslot? (-> spec/example-universe
-                                                                (assoc :previous-state spec/example-universe)
+                                                                (assoc :history (list spec/example-universe))
                                                                 (assoc-in [:accounting [:cash-up 0] [:document 0] :test] "test")
                                                                 (assoc-in [:accounting [:cash-up 1] [:document 1] :test] "test")))))
 
   (is (= true
          (props/more-than-one-document-change-per-timeslot? (-> spec/example-universe
-                                                                (assoc :previous-state spec/example-universe)
+                                                                (assoc :history (list spec/example-universe))
                                                                 (assoc-in [:accounting [:cash-up 0] [:document 0] :test] "test")
                                                                 (assoc-in [:accounting [:cash-up :meta] [:document :meta] :test] "test"))))))

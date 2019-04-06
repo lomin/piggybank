@@ -69,9 +69,12 @@
              db))
 
 (defn more-than-one-document-change-per-timeslot? [state]
-  (boolean (and (:previous-state state)
+  (boolean (and (seq (:history state))
                 (< 1 (count (set/difference (collect-branches (:accounting state))
-                                            (collect-branches (get-in state [:previous-state :accounting]))))))))
+                                            (collect-branches (-> state
+                                                                  (:history)
+                                                                  (first)
+                                                                  (:accounting)))))))))
 
 (defn any-property-violation [state]
   (cond
