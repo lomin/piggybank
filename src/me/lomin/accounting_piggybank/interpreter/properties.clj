@@ -1,16 +1,17 @@
 (ns me.lomin.accounting-piggybank.interpreter.properties
   (:require [clojure.set :as set]
-            [me.lomin.accounting-piggybank.accounting.core :as db]))
+            [me.lomin.accounting-piggybank.accounting.core :as accounting]))
 
 (defn- collect-links [f state]
   (reduce-kv f
              #{}
-             (dissoc (:accounting state) :meta)))
+             (dissoc (:accounting state) [:cash-up :meta])))
 
 (defn- all-existing-documents [state]
-  (collect-links (fn [acc branch-id documents]
-                   (into acc (map (fn [document-id]
-                                    [branch-id document-id])
+  (collect-links (fn [acc [_ cash-up-id] documents]
+                   (into acc (map (fn [[_ document-id]]
+                                    {:cash-up-id  cash-up-id
+                                     :document-id document-id})
                                   (keys documents))))
                  state))
 
@@ -20,7 +21,7 @@
                                           (:next document))
                                         (vals documents))))
                        state)
-        (get-in state [:accounting :meta :meta-document :first])))
+        (accounting/get-meta-start-link state)))
 
 (defn all-links-exist? [state]
   (set/superset? (all-existing-documents state)
@@ -33,32 +34,30 @@
   (transduce get-summands + all-documents))
 
 (defn db-state>=0? [state]
-  (<= 0 (add-all-summands (db/follow-next-links state))))
+  (<= 0 (add-all-summands (accounting/follow-next-links state))))
 
-(def nicht not)
+(defn alle-event-ids-from-cash-ups [universe]
+  (into #{} get-event-ids (accounting/follow-next-links universe)))
 
-(defn alle-event-ids-über-alle-bücher [universe]
-  (into #{} get-event-ids (db/follow-next-links universe)))
-
-(defn alle-event-ids-aus-saldo [universe]
+(defn alle-event-ids-from-balance [universe]
   (get-in universe [:balance :events]))
 
 (defn lost-updates? [universe]
-  (nicht (set/superset? (alle-event-ids-über-alle-bücher universe)
-                        (alle-event-ids-aus-saldo universe))))
+  (not (set/superset? (alle-event-ids-from-cash-ups universe)
+                      (alle-event-ids-from-balance universe))))
 
 (defn branches-come-to-different-results? [state]
   (apply not=
          (map (fn [[_ link]]
                 (add-all-summands
-                 (db/follow-next-links state
-                                       (db/get-document-by-link state link))))
-              (get-in state [:accounting :meta :meta-document]))))
+                 (accounting/follow-next-links state
+                                               (accounting/get-document-by-link state link))))
+              (accounting/get-meta-document state))))
 
-(defn- collect-documents [branch-id branch]
+(defn- collect-documents [cash-up-id branch]
   (reduce-kv (fn [s k v]
                (conj s (-> v
-                           (assoc ::branch branch-id)
+                           (assoc ::cash-up cash-up-id)
                            (assoc ::document k))))
              #{}
              branch))

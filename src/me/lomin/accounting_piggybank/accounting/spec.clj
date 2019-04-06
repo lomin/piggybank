@@ -2,16 +2,20 @@
   (:require [clojure.spec.alpha :as s]
             [me.lomin.accounting-piggybank.spec :as spec]))
 
-(s/def ::accounting (s/map-of keyword? ::collection))
+(defn variant? [x]
+  (and (vector? x) (keyword? (first x))))
+
+(s/def ::accounting (s/map-of variant? ::collection))
 (s/def ::collection (s/or :meta-collection ::meta-collection
-                          :branch-collection ::branch-collection))
-(s/def ::branch-collection (s/map-of keyword? ::branch-document))
-(s/def ::branch-document (s/keys :req-un [::transfers ::next]))
-(s/def ::meta-collection (s/keys :req-un [::meta-document]))
-(s/def ::meta-document (s/and (s/keys :req-un [::first])
-                              (s/map-of keyword? ::link)))
-(s/def ::link (s/tuple keyword? keyword?))
-(s/def ::first ::link)
+                          :cash-up-collection ::cash-up-collection))
+(s/def ::cash-up-collection (s/map-of variant? ::cash-up-document))
+(s/def ::cash-up-document (s/keys :req-un [::transfers ::next]))
+(s/def ::meta-collection (s/map-of variant? ::meta-document))
+(s/def ::meta-document (s/map-of variant? ::link))
+(s/def ::link (s/keys :req-un [::cash-up-id ::document-id]))
+(s/def ::cash-up-id some?)
+(s/def ::document-id some?)
+(s/def ::start ::link)
 (s/def ::next ::link)
 (s/def ::transfers (s/coll-of ::transfer))
 (s/def ::transfer (s/tuple ::spec/events ::spec/amount))

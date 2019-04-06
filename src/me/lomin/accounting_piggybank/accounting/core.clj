@@ -1,15 +1,29 @@
 (ns me.lomin.accounting-piggybank.accounting.core)
 
+(def META-LINK {:cash-up-id :meta :document-id :meta})
+
+(defn- link->selector [{cash-up-id :cash-up-id document-id :document-id}]
+  [[:cash-up cash-up-id] [:document document-id]])
+
+(defn make-link [cash-up-id document-id]
+  {:cash-up-id cash-up-id :document-id document-id})
+
 (defn get-document-by-link [state link]
-  (get-in (:accounting state) link))
+  (get-in (:accounting state) (link->selector link)))
 
 (defn overwrite-document-by-link [state link document]
-  (assoc-in state (into [:accounting] link) document))
+  (assoc-in state (into [:accounting] (link->selector link))
+            document))
+
+(defn get-meta-document [state]
+  (get-document-by-link state META-LINK))
+
+(defn get-meta-start-link [state]
+  (get (get-meta-document state)
+       [:cash-up :start]))
 
 (defn get-start-document [state]
-  (get-document-by-link state
-                        (get-in state
-                                [:accounting :meta :meta-document :first])))
+  (get-document-by-link state (get-meta-start-link state)))
 
 (defn follow-next-links
   ([state]
@@ -29,11 +43,8 @@
 (defn add-counter-value [document k value]
   (update document :transfers conj [#{k} value]))
 
-(defn id->key [id]
-  (keyword (str id)))
-
-(defn make-branch-init-link [{k :key}]
-  [k (id->key (str (name k) "-init"))])
+(defn make-branch-init-link [{process-id :process-id}]
+  {:cash-up-id process-id :document-id (str process-id "-init")})
 
 (defn make-new-document [link data]
   {:next link :self link :transfers data})
@@ -43,3 +54,11 @@
                               link
                               (make-new-document link
                                                  (vec data))))
+
+(defn insert-branch-in-meta [state {cash-up-id :cash-up-id :as link}]
+  (overwrite-document-by-link state
+                              META-LINK
+                              (-> state
+                                  (get-meta-document)
+                                  (assoc [:cash-up :start] link)
+                                  (assoc [:cash-up cash-up-id] link))))

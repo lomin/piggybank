@@ -4,7 +4,7 @@
             [me.lomin.accounting-piggybank.model.logic :refer [for-all there-exists]]))
 
 (defn get-event-id [[_ data]]
-  (:id data))
+  (:process-id data))
 
 (defn find-events [timeline event-type]
   (filter (fn [[event-type*]]
@@ -35,7 +35,7 @@
 
 (defn- generate-incoming-events-from [timeline events]
   (map (fn [event id]
-         (update event 1 assoc :id id))
+         (update event 1 assoc :process-id id))
        events
        (iterate inc (get-next-id timeline))))
 
@@ -185,28 +185,6 @@
             :db-add-new-document     (all (only :db-link-to-new-document))
             :db-link-to-new-document (all (only :db-write))
             :state-write             (all (prevents :state-write))}))
-
-(def model+safe-pagination+gc
-  (partial make-model
-           {::always                  (all (generate-incoming single-threaded
-                                                              [:user {:amount 1}]
-                                                              [:user {:amount -1}])
-                                           (always [:stuttering]))
-            :user                     (all (triggers :db-read)
-                                           (prevents :user))
-            :db-read                  (all (triggers :db-write
-                                                     :db-add-new-document)
-                                           (prevents :db-read))
-            :db-write                 (all (triggers :state-write)
-                                           (prevents :db-write))
-            :db-link-to-new-document  (all (prevents :db-link-to-new-document))
-            :db-add-new-document      (all (triggers :db-link-to-new-document)
-                                           (prevents :db-add-new-document))
-            :state-write              (all (triggers :db-gc-new-branch)
-                                           (prevents :state-write))
-            :db-gc-new-branch         (all (triggers :db-gc-link-to-new-branch)
-                                           (prevents :db-gc-new-branch))
-            :db-gc-link-to-new-branch (all (prevents :db-gc-link-to-new-branch))}))
 
 (def model+safe-pagination+gc-strict
   (partial make-model

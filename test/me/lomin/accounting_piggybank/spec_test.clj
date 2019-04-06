@@ -9,4 +9,5 @@
         (s/explain spec x))))
 
 (deftest spec-test
-  (spec-valid? ::spec/context spec/example-context))
+  (spec-valid? ::spec/universe spec/empty-universe)
+  (spec-valid? ::spec/universe spec/example-universe))

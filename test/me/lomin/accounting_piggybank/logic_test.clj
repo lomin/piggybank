@@ -5,8 +5,8 @@
 
 (deftest ^:unit logic-test
   (let [empty-timeline []
-        timeline-0 [[:user {:id 1}] [:state-write {:id 1}]]
-        timeline-1 [[:user {:id 1}] [:state-write {:id 1}] [:user {:id 2}]]]
+        timeline-0 [[:user {:process-id 1}] [:state-write {:process-id 1}]]
+        timeline-1 [[:user {:process-id 1}] [:state-write {:process-id 1}] [:user {:process-id 2}]]]
 
     (is (= true
            (for-all [user-event (timeline/find-events empty-timeline :user)]
