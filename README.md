@@ -11,6 +11,12 @@ The modeling process provides clarity about sources of error. The model checker 
 ## How does this project contribute to the solution?
 This projects describes a very simple way to model and check the design of a distributed system. This project is neither as optimized, nor as feature-rich as alternative solutions like TLA+. The main purpose is to motivate the modeling of critical system design decision. The assumption is that a familiar syntax and programming model (especially for Clojure developers) makes it easy to learn about and to practice modelling of distributed systems.
 
+## Usage
+
+```
+./lein test
+```
+
 ## License
 
 Copyright © 2019 Steven Collins
