@@ -1,4 +1,4 @@
-# accounting-piggybank
+# piggybank
 
 ## What is the problem?
 Implementing distributed systems correctly is difficult.

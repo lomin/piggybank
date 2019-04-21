@@ -1,8 +1,8 @@
-(ns me.lomin.accounting-piggybank.interpreter-test
+(ns me.lomin.piggybank.accounting.interpreter-test
   (:require [clojure.test :refer :all]
-            [me.lomin.accounting-piggybank.interpreter.core :as intp]
-            [me.lomin.accounting-piggybank.interpreter.spec :as spec]
-            [me.lomin.accounting-piggybank.test-util :refer [=*]]))
+            [me.lomin.piggybank.accounting.interpreter.core :as intp]
+            [me.lomin.piggybank.accounting.interpreter.spec :as spec]
+            [me.lomin.piggybank.checker :refer [=*]]))
 
 (def test-state spec/example-universe)
 

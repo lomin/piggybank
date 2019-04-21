@@ -1,4 +1,4 @@
-(defproject me.lomin.accounting-piggybank "0.1.0-SNAPSHOT"
+(defproject me.lomin.piggybank "0.1.0-SNAPSHOT"
   :description "This projects describes a very simple way to model and check the design of a distributed system."
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -8,11 +8,12 @@
                  [org.clojure/math.combinatorics "0.1.4"]
                  [me.lomin/sayang "0.3.0"]]
 
-  :test-selectors {:default #(not (some #{} (keys %)))
-                   :unit    #(not (some #{:model} (keys %)))
-                   :focus   :focus
-                   :model   :model
-                   :all     (constantly true)}
+  :test-selectors {:default    #(not (some #{:slow-model} (keys %)))
+                   :unit       #(not (some #{:slow-model :model} (keys %)))
+                   :focus      :focus
+                   :model      :model
+                   :slow-model :slow-model
+                   :all        (constantly true)}
 
   :aliases {"test"         ["do" ["nsorg" "--replace"] ["cljfmt" "fix"] "test"]
             "test-refresh" ["do" ["nsorg" "--replace"] ["cljfmt" "fix"] "test-refresh"]}
@@ -30,7 +31,7 @@
                                    [lein-ancient "0.6.15"]
                                    [lein-nsorg "0.2.0"]
                                    [venantius/ultra "0.5.4"]]
-                    :jvm-opts ["-Dme.lomin.sayang.*activate*=true"]
+                    :jvm-opts     ["-Dme.lomin.sayang.*activate*=true"]
                     }
              :test {:jvm-opts       ["-Xms2048m" "-Xmx2048m" ~(str "-Djava.io.tmpdir=" (System/getenv "HOME"))]
                     :resource-paths ["test-resources"]}})

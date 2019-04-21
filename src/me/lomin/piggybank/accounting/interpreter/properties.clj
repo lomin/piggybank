@@ -1,6 +1,6 @@
-(ns me.lomin.accounting-piggybank.interpreter.properties
+(ns me.lomin.piggybank.accounting.interpreter.properties
   (:require [clojure.set :as set]
-            [me.lomin.accounting-piggybank.accounting.core :as accounting]))
+            [me.lomin.piggybank.accounting.accounting.core :as accounting]))
 
 (defn- collect-links [f state]
   (reduce-kv f
@@ -76,10 +76,10 @@
                                                                   (first)
                                                                   (:accounting)))))))))
 
-(defn any-property-violation [state]
+(defn any-property-violation [{:keys [universe]}]
   (cond
-    (not (all-links-exist? state)) :all-links-must-point-to-an-existing-document
-    (not (db-state>=0? state)) :db-state-must-always-be>=0
-    (lost-updates? state) :there-must-be-no-lost-updates
-    (branches-come-to-different-results? state) :all-branches-must-come-to-the-same-result
-    (more-than-one-document-change-per-timeslot? state) :there-must-be-only-one-document-change-per-timeslot))
+    (not (all-links-exist? universe)) :all-links-must-point-to-an-existing-document
+    (not (db-state>=0? universe)) :db-state-must-always-be>=0
+    (lost-updates? universe) :there-must-be-no-lost-updates
+    (branches-come-to-different-results? universe) :all-branches-must-come-to-the-same-result
+    (more-than-one-document-change-per-timeslot? universe) :there-must-be-only-one-document-change-per-timeslot))

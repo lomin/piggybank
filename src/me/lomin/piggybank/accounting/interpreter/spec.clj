@@ -1,7 +1,7 @@
-(ns me.lomin.accounting-piggybank.interpreter.spec
+(ns me.lomin.piggybank.accounting.interpreter.spec
   (:require [clojure.spec.alpha :as s]
-            [me.lomin.accounting-piggybank.accounting.spec :as db]
-            [me.lomin.accounting-piggybank.spec :as spec]))
+            [me.lomin.piggybank.accounting.accounting.spec :as db]
+            [me.lomin.piggybank.accounting.spec :as spec]))
 
 (s/def ::universe (s/keys :req-un [::db/accounting ::balance] :opt-un [::previous-state]))
 (s/def ::previous-state ::universe)

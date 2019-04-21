@@ -1,9 +1,7 @@
-(ns me.lomin.accounting-piggybank.accounting.spec
+(ns me.lomin.piggybank.accounting.accounting.spec
   (:require [clojure.spec.alpha :as s]
-            [me.lomin.accounting-piggybank.spec :as spec]))
-
-(defn variant? [x]
-  (and (vector? x) (keyword? (first x))))
+            [me.lomin.piggybank.accounting.spec :as spec]
+            [me.lomin.piggybank.spec :refer [variant?]]))
 
 (s/def ::accounting (s/map-of variant? ::collection))
 (s/def ::collection (s/or :meta-collection ::meta-collection

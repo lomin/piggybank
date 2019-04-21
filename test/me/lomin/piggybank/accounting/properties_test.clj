@@ -1,11 +1,11 @@
-(ns me.lomin.accounting-piggybank.properties-test
+(ns me.lomin.piggybank.accounting.properties-test
   (:require [clojure.test :refer :all]
-            [me.lomin.accounting-piggybank.interpreter.properties :as props]
-            [me.lomin.accounting-piggybank.interpreter.spec :as spec]))
+            [me.lomin.piggybank.accounting.interpreter.properties :as props]
+            [me.lomin.piggybank.accounting.interpreter.spec :as spec]))
 
 (deftest ^:unit example-context-does-not-violate-any-property
   (is (= nil
-         (props/any-property-violation spec/example-universe))))
+         (props/any-property-violation {:universe spec/example-universe}))))
 
 (deftest ^:unit property-db-state>=0-test
   (is (= true (props/db-state>=0? spec/example-universe)))

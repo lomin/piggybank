@@ -1,7 +1,7 @@
-(ns me.lomin.accounting-piggybank.logic-test
+(ns me.lomin.piggybank.logic-test
   (:require [clojure.test :refer :all]
-            [me.lomin.accounting-piggybank.model.core :as timeline]
-            [me.lomin.accounting-piggybank.model.logic :refer [for-all there-exists]]))
+            [me.lomin.piggybank.logic :refer [for-all there-exists]]
+            [me.lomin.piggybank.model :as timeline]))
 
 (deftest ^:unit logic-test
   (let [empty-timeline []

@@ -1,7 +1,8 @@
-(ns me.lomin.accounting-piggybank.interpreter.core
-  (:require [me.lomin.accounting-piggybank.accounting.core :as db]
-            [me.lomin.accounting-piggybank.accounting.core :as accounting]
-            [me.lomin.accounting-piggybank.interpreter.properties :as props]))
+(ns me.lomin.piggybank.accounting.interpreter.core
+  (:require [me.lomin.piggybank.accounting.accounting.core :as db]
+            [me.lomin.piggybank.accounting.accounting.core :as accounting]
+            [me.lomin.piggybank.accounting.interpreter.properties :as props]
+            [me.lomin.piggybank.interpreter :as interpreter]))
 
 (def IN-MEMORY-BALANCE [:balance :amount])
 (def IN-MEMORY-PIDS [:balance :processes])
@@ -86,30 +87,17 @@
       :restart (restart state data)
       state)))
 
-(def inc-or-0 (fnil inc 0))
-
-(defn inc-check-count [state]
-  (update state :check-count inc-or-0))
-
-(defn add-previous-state [state previous-state]
-  (update state :history (fnil conj (list)) (dissoc previous-state :history)))
-
-(defn add-property-violation [state violation timeline]
-  (assoc state :property-violated {:name violation :timeline timeline}))
-
-(defn check-properties [state timeline progress-bar]
-  (when progress-bar (progress-bar))
-  (if-let [violation (props/any-property-violation state)]
-    (reduced (add-property-violation state violation timeline))
-    (inc-check-count state)))
+(def SPECIFICS {:interpret-event        interpret-event
+                :any-property-violation props/any-property-violation})
 
 (defn interpret-timeline
-  ([state timeline] (interpret-timeline nil state timeline))
+  ([context]
+   (interpreter/interpret-timeline (merge context SPECIFICS)))
+  ([state timeline]
+   (interpret-timeline nil state timeline))
   ([progress-bar state timeline]
-   (reduce (fn [state* event]
-             (-> state*
-                 (interpret-event event)
-                 (add-previous-state state*)
-                 (check-properties timeline progress-bar)))
-           state
-           timeline)))
+   (interpreter/interpret-timeline {:interpret-event        interpret-event
+                                    :progress-bar           progress-bar
+                                    :universe               state
+                                    :timeline               timeline
+                                    :any-property-violation props/any-property-violation})))

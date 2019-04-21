@@ -1,7 +1,12 @@
-(ns me.lomin.accounting-piggybank.timeline.spec
-  (:require [clojure.spec.alpha :as s]))
+(ns me.lomin.piggybank.timeline
+  (:require [clojure.spec.alpha :as s]
+            [me.lomin.sayang :refer [sdefn]]))
+
+;; spec
 
 (defn infinite-seq-of
+  ;; s/*coll-check-limit* has to bound in every function.
+  ;; Binding it once above (reify ...) has no effect.
   ([s] (infinite-seq-of s 3))
   ([s coll-check-limit]
    (let [every* (s/every s)]
@@ -29,3 +34,37 @@
 (s/def ::timeline-event-pair (s/cat :timeline ::timeline
                                     :event ::event))
 (s/def ::timeline-event-pair-seq (s/every ::timeline-event-pair))
+
+;; impl
+
+(def EMPTY-TIMELINES #{[]})
+
+(defn flat-set [& xforms]
+  #(into #{} (comp (apply comp xforms) cat) %))
+
+(defn pair-with [x]
+  (fn [y] [x y]))
+
+(sdefn multiply {:ret ::timeline-set}
+       [[timeline :- ::timeline]
+        [event-set :- ::event-set]]
+       (set (map conj
+                 (repeat timeline)
+                 event-set)))
+
+(sdefn successor-timelines {:ret ::timeline-set}
+       [[model timeline]]
+       (multiply timeline (model {:timeline timeline})))
+
+(sdefn infinite-timelines-seq {:ret (infinite-seq-of ::timeline-set)}
+       [[model :- ::model]
+        [start-timelines :- ::timeline-set]]
+       (iterate (flat-set (map (pair-with model))
+                          (map successor-timelines))
+                start-timelines))
+
+(sdefn all-timelines-of-length {:ret ::timeline-set}
+       [[length :- int?]
+        [model :- ::model]]
+       (nth (infinite-timelines-seq model EMPTY-TIMELINES)
+            length))

@@ -1,4 +1,4 @@
-(ns me.lomin.accounting-piggybank.model.logic)
+(ns me.lomin.piggybank.logic)
 
 (defmacro for-all [[sym coll] & body]
   `(every? (fn [~sym] ~@body)

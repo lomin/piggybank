@@ -1,4 +1,4 @@
-(ns me.lomin.accounting-piggybank.progress-bar
+(ns me.lomin.piggybank.progress-bar
   (:require [progrock.core :as pr]))
 
 (defn- make-progress-bar

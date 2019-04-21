@@ -1,48 +1,29 @@
-(ns me.lomin.accounting-piggybank.model-test
-  (:require [clojure.core.reducers :as r]
-            [clojure.test :refer :all]
-            [me.lomin.accounting-piggybank.interpreter.core :as intp]
-            [me.lomin.accounting-piggybank.interpreter.spec :as spec]
-            [me.lomin.accounting-piggybank.model.core :refer [&*
-                                                              all
-                                                              always
-                                                              choose
-                                                              generate-incoming
-                                                              make-model
-                                                              multi-threaded
-                                                              prevents
-                                                              triggers] :as model]
-            [me.lomin.accounting-piggybank.progress-bar :as pgb]
-            [me.lomin.accounting-piggybank.test-util :refer [=*]]
-            [me.lomin.accounting-piggybank.timeline.core :as timeline]))
-
-(def plus (fnil + 0 0))
-
-(defn check-properties
-  ([] spec/example-universe)
-  ([state] state)
-  ([state-0 state-1]
-   (let [state-1* (update state-1 :check-count plus (:check-count state-0))]
-     (if (:property-violated state-1)
-       (reduced state-1*)
-       state-1*))))
+(ns me.lomin.piggybank.accounting.model-test
+  (:require [clojure.test :refer :all]
+            [me.lomin.piggybank.accounting.interpreter.core :as intp]
+            [me.lomin.piggybank.accounting.interpreter.spec :as spec]
+            [me.lomin.piggybank.accounting.model.core :as model]
+            [me.lomin.piggybank.checker :refer [=*] :as checker]
+            [me.lomin.piggybank.model :refer [&*
+                                              all
+                                              always
+                                              choose
+                                              generate-incoming
+                                              make-model
+                                              multi-threaded
+                                              prevents
+                                              triggers]]
+            [me.lomin.piggybank.timeline :as timeline]))
 
 (defn check
   ([model length]
    (check model length nil))
   ([model length keys]
-   (let [timelines (timeline/all-timelines-of-length length model)
-         max-check-count (* length (count timelines))
-         progress-bar (pgb/make-fuzzy-progress-bar max-check-count)
-         result (-> (r/fold check-properties
-                            (r/map (partial intp/interpret-timeline
-                                            progress-bar
-                                            spec/empty-universe)
-                                   timelines))
-                    (assoc :max-check-count max-check-count))]
-     (if keys
-       (select-keys result keys)
-       result))))
+   (checker/check {:model       model
+                   :length      length
+                   :keys        keys
+                   :interpreter intp/interpret-timeline
+                   :universe    spec/empty-universe})))
 
 (deftest ^:unit model-unit-test
   (is (= #{[[:stuttering] [:stuttering]]
@@ -172,20 +153,20 @@
                                            [:balance-write {:amount 1, :process-id 1}]]}}
            (check model/model+safe-pagination+gc-strict 10 [:check-count :property-violated :accounting])))))
 
-(deftest ^:model single-threaded-inmemory-db-model-test
-  (is (= {:check-count       46151
-          :max-check-count   81120
-          :property-violated {:name     :db-state-must-always-be>=0
-                              :timeline [[:process {:amount 1, :process-id 0}]
-                                         [:accounting-read {:amount 1, :process-id 0}]
-                                         [:accounting-write {:amount 1, :process-id 0}]
-                                         [:balance-write {:amount 1, :process-id 0}]
-                                         [:process {:amount -1, :process-id 2}]
-                                         [:accounting-read {:amount -1, :process-id 2}]
-                                         [:accounting-write {:amount -1, :process-id 2}]
-                                         [:balance-write {:amount -1, :process-id 2}]
-                                         [:restart {:past 2}]
-                                         [:process {:amount -1, :process-id 4}]
-                                         [:accounting-read {:amount -1, :process-id 4}]
-                                         [:accounting-write {:amount -1, :process-id 4}]]}}
-         (check model/single-threaded+inmemory-balance+eventually-consistent-accounting-model 12 [:check-count :property-violated :max-check-count]))))
+(comment deftest ^:model single-threaded-inmemory-db-model-test
+         (is (= {:check-count       46151
+                 :max-check-count   81120
+                 :property-violated {:name     :db-state-must-always-be>=0
+                                     :timeline [[:process {:amount 1, :process-id 0}]
+                                                [:accounting-read {:amount 1, :process-id 0}]
+                                                [:accounting-write {:amount 1, :process-id 0}]
+                                                [:balance-write {:amount 1, :process-id 0}]
+                                                [:process {:amount -1, :process-id 2}]
+                                                [:accounting-read {:amount -1, :process-id 2}]
+                                                [:accounting-write {:amount -1, :process-id 2}]
+                                                [:balance-write {:amount -1, :process-id 2}]
+                                                [:restart {:past 2}]
+                                                [:process {:amount -1, :process-id 4}]
+                                                [:accounting-read {:amount -1, :process-id 4}]
+                                                [:accounting-write {:amount -1, :process-id 4}]]}}
+                (check model/single-threaded+inmemory-balance+eventually-consistent-accounting-model 12 [:check-count :property-violated :max-check-count]))))
