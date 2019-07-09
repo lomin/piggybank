@@ -5,15 +5,13 @@
             [me.lomin.piggybank.bounded-buffer.spec :as spec]
             [me.lomin.piggybank.checker :refer [=*]]
             [me.lomin.piggybank.checker :as checker]
-            [me.lomin.piggybank.model :refer [&*
-                                              all
+            [me.lomin.piggybank.model :refer [all
                                               always
                                               ALWAYS
                                               choose
                                               generate-incoming
                                               make-model
                                               multi-threaded
-                                              prevents
                                               triggers]]))
 
 (deftest ^:unit

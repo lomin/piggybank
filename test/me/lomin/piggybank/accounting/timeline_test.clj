@@ -1,18 +1,15 @@
 (ns me.lomin.piggybank.accounting.timeline-test
   (:require [clojure.test :refer :all]
             [me.lomin.piggybank.accounting.model.core :as model]
-            [me.lomin.piggybank.model :refer [&
-                                              all
+            [me.lomin.piggybank.model :refer [all
                                               ALWAYS
                                               always
                                               choose
-                                              for-every-past
+                                              triggers-for-every-past
                                               generate-incoming
                                               make-model
                                               multi-threaded
                                               only
-                                              prevents
-                                              single-threaded
                                               triggers]]
             [me.lomin.piggybank.timeline :as timeline]
             [orchestra.spec.test :as orchestra]))
@@ -141,12 +138,10 @@
             [:process {:amount 1, :process-id 1}]]}
          (timeline/all-timelines-of-length 3
                                            (partial make-model
-                                                    {ALWAYS (all (generate-incoming single-threaded
-                                                                                    [:process {:amount 1}]))
-                                                     :restart                         (all (only))
-                                                     :process                         (& (choose (for-every-past :restart)
-                                                                                                 (triggers :balance-write))
-                                                                                         (all (prevents :process)))
-                                                     :balance-write                   (& (choose (for-every-past :restart)
-                                                                                                 (only))
-                                                                                         (all (prevents :balance-write)))})))))
+                                                    {ALWAYS         (all (generate-incoming model/single-threaded
+                                                                                            [:process {:amount 1}]))
+                                                     :restart       (all (only))
+                                                     :process       (choose (triggers-for-every-past :restart)
+                                                                            (triggers :balance-write))
+                                                     :balance-write (choose (triggers-for-every-past :restart)
+                                                                            (only))})))))

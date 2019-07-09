@@ -23,17 +23,25 @@
 (defn- get-next-process-id [timeline]
   (inc (get-last-process-id timeline)))
 
-(defn- combine-events-with [f event-types]
-  (fn [event-candidates {[_ data] :event}]
-    (f event-candidates
-       (set (map (fn [event-type] [event-type data])
-                 event-types)))))
+(defn- default-event-candidates [event-types {[_ data] :event}]
+  (set (map (fn [event-type] [event-type data])
+            event-types)))
 
-(defn- writing-process-finished? [timeline]
-  (for-all [incoming-event (find-events timeline :process)]
-           (there-exists [write-completion-event (find-events timeline :balance-write)]
-                         (= (get-process-id incoming-event)
-                            (get-process-id write-completion-event)))))
+(defn- for-every-past-event-candidates [event-types {timeline :timeline}]
+  (set (map (fn [[event i]] [event {:past i}])
+            (combo/cartesian-product event-types
+                                     (range (inc (count timeline)))))))
+
+(defn- combine-events-with [combine-f make-event-candidates event-types]
+  (fn [event-candidates {[e-type] :event :as context}]
+    (set/difference (combine-f event-candidates
+                               (make-event-candidates event-types context))
+                    (default-event-candidates #{e-type} context))))
+
+(defn triggers-for-every-past [& event-types]
+  (combine-events-with set/union
+                       for-every-past-event-candidates
+                       event-types))
 
 (defn- generate-incoming-events-from [timeline events]
   (map (fn [event id]
@@ -64,9 +72,6 @@
 
 ;; combinators
 
-(defn single-threaded [{:keys [timeline]}]
-  (writing-process-finished? timeline))
-
 (defn multi-threaded [_] true)
 
 (defn always [& events]
@@ -79,32 +84,29 @@
                (set (when (pred context)
                       (generate-incoming-events-from timeline events))))))
 
-(defn for-every-past [& events]
-  (fn [event-candidates {:keys [timeline]}]
-    (set/union event-candidates
-               (set (map (fn [[event i]] [event {:past i}])
-                         (combo/cartesian-product events
-                                                  (range (inc (count timeline)))))))))
-
-(defn triggers [& event-types]
-  (combine-events-with set/union event-types))
-
 (defn prevents [& event-types]
-  (combine-events-with set/difference event-types))
+  (combine-events-with set/difference
+                       default-event-candidates
+                       event-types))
 
-(defn only [& allowed-event-types]
-  (fn [_ {model :model :as context}]
-    (let [f (apply triggers allowed-event-types)]
-      (f (flat-set (init model context))
-         context))))
-
-(defn &* [& low-level-combinators]
+(defn- &* [& low-level-combinators]
   (fn [event-candidates context]
     (let [f (apply comp
                    (map #(fn [event-candidates-set*]
                            (% event-candidates-set* context))
                         low-level-combinators))]
       (f event-candidates))))
+
+(defn triggers [& event-types]
+  (combine-events-with set/union
+                       default-event-candidates
+                       event-types))
+
+(defn only [& allowed-event-types]
+  (fn [_ {model :model :as context}]
+    (let [f (apply triggers allowed-event-types)]
+      (f (flat-set (init model context))
+         context))))
 
 ;; top-level combinators
 
