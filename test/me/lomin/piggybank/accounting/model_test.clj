@@ -7,10 +7,11 @@
             [me.lomin.piggybank.model :refer [all
                                               always
                                               choose
+                                              continue
                                               generate-incoming
                                               make-model
                                               multi-threaded
-                                              triggers]]
+                                              then]]
             [me.lomin.piggybank.timeline :as timeline]))
 
 (defn check
@@ -51,10 +52,10 @@
                                                                         [:process {:amount 1}]
                                                                         [:process {:amount -1}])
                                                      (always [:stuttering]))
-                               :process         (choose (triggers :accounting-read)
-                                                        (triggers :balance-write))
-                               :accounting-read (all (triggers))
-                               :balance-write   (all (triggers))})
+                               :process         (choose (then :accounting-read)
+                                                        (then :balance-write))
+                               :accounting-read (continue)
+                               :balance-write   (continue)})
         choose-timelines (timeline/all-timelines-of-length 3
                                                            choose-model)]
     (is (= nil

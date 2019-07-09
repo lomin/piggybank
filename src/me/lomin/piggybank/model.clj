@@ -23,25 +23,15 @@
 (defn- get-next-process-id [timeline]
   (inc (get-last-process-id timeline)))
 
-(defn- default-event-candidates [event-types {[_ data] :event}]
+(defn- make-event-candidates-default [event-types {[_ data] :event}]
   (set (map (fn [event-type] [event-type data])
             event-types)))
 
-(defn- for-every-past-event-candidates [event-types {timeline :timeline}]
-  (set (map (fn [[event i]] [event {:past i}])
-            (combo/cartesian-product event-types
-                                     (range (inc (count timeline)))))))
-
-(defn- combine-events-with [combine-f make-event-candidates event-types]
+(defn combine-events-with [combine-f make-event-candidates event-types]
   (fn [event-candidates {[e-type] :event :as context}]
     (set/difference (combine-f event-candidates
                                (make-event-candidates event-types context))
-                    (default-event-candidates #{e-type} context))))
-
-(defn triggers-for-every-past [& event-types]
-  (combine-events-with set/union
-                       for-every-past-event-candidates
-                       event-types))
+                    (make-event-candidates-default #{e-type} context))))
 
 (defn- generate-incoming-events-from [timeline events]
   (map (fn [event id]
@@ -86,7 +76,7 @@
 
 (defn prevents [& event-types]
   (combine-events-with set/difference
-                       default-event-candidates
+                       make-event-candidates-default
                        event-types))
 
 (defn- &* [& low-level-combinators]
@@ -97,14 +87,14 @@
                         low-level-combinators))]
       (f event-candidates))))
 
-(defn triggers [& event-types]
+(defn then [& event-types]
   (combine-events-with set/union
-                       default-event-candidates
+                       make-event-candidates-default
                        event-types))
 
 (defn only [& allowed-event-types]
   (fn [_ {model :model :as context}]
-    (let [f (apply triggers allowed-event-types)]
+    (let [f (apply then allowed-event-types)]
       (f (flat-set (init model context))
          context))))
 
@@ -122,6 +112,9 @@
           (map (fn [[event-candidates f]] (f event-candidates context))
                (combo/cartesian-product event-candidates-set
                                         combinators)))))
+
+(defn continue [] (all (then)))
+(defn end [] (only))
 
 ;; combinator of combinators
 

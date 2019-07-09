@@ -1,16 +1,16 @@
 (ns me.lomin.piggybank.accounting.timeline-test
   (:require [clojure.test :refer :all]
-            [me.lomin.piggybank.accounting.model.core :as model]
+            [me.lomin.piggybank.accounting.model.core :refer [then-for-every-past-time-slot] :as model]
             [me.lomin.piggybank.model :refer [all
-                                              START
                                               always
                                               choose
-                                              triggers-for-every-past
+                                              end
                                               generate-incoming
                                               make-model
                                               multi-threaded
                                               only
-                                              triggers]]
+                                              START
+                                              then]]
             [me.lomin.piggybank.timeline :as timeline]
             [orchestra.spec.test :as orchestra]))
 
@@ -140,8 +140,8 @@
                                            (partial make-model
                                                     {START          (all (generate-incoming model/single-threaded
                                                                                             [:process {:amount 1}]))
-                                                     :restart       (all (only))
-                                                     :process       (choose (triggers-for-every-past :restart)
-                                                                            (triggers :balance-write))
-                                                     :balance-write (choose (triggers-for-every-past :restart)
-                                                                            (only))})))))
+                                                     :restart       (all (end))
+                                                     :process       (choose (model/then-for-every-past-time-slot :restart)
+                                                                            (then :balance-write))
+                                                     :balance-write (choose (model/then-for-every-past-time-slot :restart)
+                                                                            (end))})))))

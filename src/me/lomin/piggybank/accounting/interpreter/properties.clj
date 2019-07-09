@@ -68,7 +68,7 @@
              #{}
              db))
 
-(defn more-than-one-document-change-per-timeslot? [state]
+(defn more-than-one-document-change-per-time-slot? [state]
   (boolean (and (seq (:history state))
                 (< 1 (count (set/difference (collect-branches (:accounting state))
                                             (collect-branches (-> state
@@ -82,4 +82,4 @@
     (not (db-state>=0? universe)) :db-state-must-always-be>=0
     (lost-updates? universe) :there-must-be-no-lost-updates
     (branches-come-to-different-results? universe) :all-branches-must-come-to-the-same-result
-    (more-than-one-document-change-per-timeslot? universe) :there-must-be-only-one-document-change-per-timeslot))
+    (more-than-one-document-change-per-time-slot? universe) :there-must-be-only-one-document-change-per-timeslot))

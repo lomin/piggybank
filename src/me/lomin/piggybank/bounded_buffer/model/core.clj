@@ -2,9 +2,9 @@
   (:require [clojure.math.combinatorics :as combo])
   (:require [me.lomin.piggybank.logic :refer [for-all there-exists]]
             [me.lomin.piggybank.model :refer [all
-                                              START
                                               always
-                                              make-model]]))
+                                              make-model
+                                              START]]))
 
 (def simple-bounded-buffer-model
   (partial make-model

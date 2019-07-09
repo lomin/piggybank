@@ -7,12 +7,12 @@
             [me.lomin.piggybank.checker :as checker]
             [me.lomin.piggybank.model :refer [all
                                               always
-                                              START
                                               choose
                                               generate-incoming
                                               make-model
                                               multi-threaded
-                                              triggers]]))
+                                              START
+                                              then]]))
 
 (deftest ^:unit
   make-model-test
@@ -59,7 +59,7 @@
               (check (partial make-model
                               {START (apply all
                                             (map #(always %)
-                                                  model))})
+                                                 model))})
                      length
                      keys)))
           keys
