@@ -1,7 +1,7 @@
 (ns me.lomin.piggybank.bounded-buffer.model-test
   (:require [clojure.test :refer :all]
             [me.lomin.piggybank.bounded-buffer.interpreter.core :as intp]
-            [me.lomin.piggybank.bounded-buffer.model.core :as model]
+            [me.lomin.piggybank.bounded-buffer.model :as model]
             [me.lomin.piggybank.bounded-buffer.spec :as spec]
             [me.lomin.piggybank.checker :refer [=*]]
             [me.lomin.piggybank.checker :as checker]

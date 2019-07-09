@@ -1,6 +1,6 @@
 (ns me.lomin.piggybank.bounded-buffer.timeline-test
   (:require [clojure.test :refer :all]
-            [me.lomin.piggybank.bounded-buffer.model.core :as model]
+            [me.lomin.piggybank.bounded-buffer.model :as model]
             [me.lomin.piggybank.timeline :as timeline]))
 
 (deftest ^:unit pagination-test
