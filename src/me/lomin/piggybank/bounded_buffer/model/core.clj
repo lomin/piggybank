@@ -2,15 +2,15 @@
   (:require [clojure.math.combinatorics :as combo])
   (:require [me.lomin.piggybank.logic :refer [for-all there-exists]]
             [me.lomin.piggybank.model :refer [all
-                                              ALWAYS
+                                              START
                                               always
                                               make-model]]))
 
 (def simple-bounded-buffer-model
   (partial make-model
-           {ALWAYS (all (always [:consumer {:id 0}])
-                        (always [:consumer {:id 1}])
-                        (always [:producer {:id 2}]))}))
+           {START (all (always [:consumer {:id 0}])
+                       (always [:consumer {:id 1}])
+                       (always [:producer {:id 2}]))}))
 
 (def remove-obvious-wrong-models
   (remove #(apply = %)))

@@ -1,7 +1,7 @@
 (ns me.lomin.piggybank.accounting.model.core
   (:require [me.lomin.piggybank.logic :refer [for-all there-exists]]
             [me.lomin.piggybank.model :refer [all
-                                              ALWAYS
+                                              START
                                               always
                                               choose
                                               triggers-for-every-past
@@ -24,7 +24,7 @@
 
 (def multi-threaded-simple-model
   (partial make-model
-           {ALWAYS            (all (generate-incoming multi-threaded
+           {START             (all (generate-incoming multi-threaded
                                                       [:process {:amount 1}]
                                                       [:process {:amount -1}])
                                    (always [:stuttering]))
@@ -35,7 +35,7 @@
 
 (def single-threaded-simple-model
   (partial make-model
-           {ALWAYS            (all (generate-incoming single-threaded
+           {START             (all (generate-incoming single-threaded
                                                       [:process {:amount 1}]
                                                       [:process {:amount -1}])
                                    (always [:stuttering]))
@@ -46,7 +46,7 @@
 
 (def single-threaded+pagination-model
   (partial make-model
-           {ALWAYS                           (all (generate-incoming single-threaded
+           {START                            (all (generate-incoming single-threaded
                                                                      [:process {:amount 1}]
                                                                      [:process {:amount -1}])
                                                   (always [:stuttering]))
@@ -61,7 +61,7 @@
 
 (def single-threaded+safe-pagination-model
   (partial make-model
-           {ALWAYS                           (all (generate-incoming multi-threaded
+           {START                            (all (generate-incoming multi-threaded
                                                                      [:process {:amount 1}]
                                                                      [:process {:amount -1}])
                                                   (always [:stuttering]))
@@ -75,7 +75,7 @@
 
 (def model+safe-pagination+gc-strict
   (partial make-model
-           {ALWAYS                            (all (generate-incoming single-threaded
+           {START                             (all (generate-incoming single-threaded
                                                                       [:process {:amount 1}]
                                                                       [:process {:amount -1}])
                                                    (always [:stuttering]))
@@ -91,7 +91,7 @@
 
 (def single-threaded+inmemory-balance+eventually-consistent-accounting-model
   (partial make-model
-           {ALWAYS            (all (generate-incoming single-threaded
+           {START             (all (generate-incoming single-threaded
                                                       [:process {:amount 1}]
                                                       [:process {:amount -1}]))
             :restart          (all (only))

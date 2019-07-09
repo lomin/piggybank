@@ -7,7 +7,7 @@
             [me.lomin.piggybank.checker :as checker]
             [me.lomin.piggybank.model :refer [all
                                               always
-                                              ALWAYS
+                                              START
                                               choose
                                               generate-incoming
                                               make-model
@@ -57,8 +57,8 @@
             (if (:property-violated result)
               (reduced result)
               (check (partial make-model
-                              {ALWAYS (apply all
-                                             (map #(always %)
+                              {START (apply all
+                                            (map #(always %)
                                                   model))})
                      length
                      keys)))
@@ -149,15 +149,15 @@
                                       [:consumer {:id 0, :notify 2}]
                                       [:consumer {:id 1, :notify 2}]]
                                      (partial make-model
-                                              {ALWAYS (all (always [:consumer {:id 0, :notify 0}])
-                                                           (always [:consumer {:id 0, :notify 1}])
-                                                           (always [:consumer {:id 0, :notify 2}])
-                                                           (always [:consumer {:id 0, :notify 3}])
-                                                           (always [:consumer {:id 1, :notify 0}])
-                                                           (always [:consumer {:id 1, :notify 1}])
-                                                           (always [:consumer {:id 1, :notify 2}])
-                                                           (always [:consumer {:id 1, :notify 3}])
-                                                           (always [:producer {:id 2, :notify 0}])
-                                                           (always [:producer {:id 2, :notify 1}])
-                                                           (always [:producer {:id 2, :notify 2}])
-                                                           (always [:producer {:id 2, :notify 3}]))}))))))
+                                              {START (all (always [:consumer {:id 0, :notify 0}])
+                                                          (always [:consumer {:id 0, :notify 1}])
+                                                          (always [:consumer {:id 0, :notify 2}])
+                                                          (always [:consumer {:id 0, :notify 3}])
+                                                          (always [:consumer {:id 1, :notify 0}])
+                                                          (always [:consumer {:id 1, :notify 1}])
+                                                          (always [:consumer {:id 1, :notify 2}])
+                                                          (always [:consumer {:id 1, :notify 3}])
+                                                          (always [:producer {:id 2, :notify 0}])
+                                                          (always [:producer {:id 2, :notify 1}])
+                                                          (always [:producer {:id 2, :notify 2}])
+                                                          (always [:producer {:id 2, :notify 3}]))}))))))

@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [me.lomin.piggybank.accounting.model.core :as model]
             [me.lomin.piggybank.model :refer [all
-                                              ALWAYS
+                                              START
                                               always
                                               choose
                                               triggers-for-every-past
@@ -138,7 +138,7 @@
             [:process {:amount 1, :process-id 1}]]}
          (timeline/all-timelines-of-length 3
                                            (partial make-model
-                                                    {ALWAYS         (all (generate-incoming model/single-threaded
+                                                    {START          (all (generate-incoming model/single-threaded
                                                                                             [:process {:amount 1}]))
                                                      :restart       (all (only))
                                                      :process       (choose (triggers-for-every-past :restart)

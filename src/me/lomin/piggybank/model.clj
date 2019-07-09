@@ -3,7 +3,7 @@
             [clojure.set :as set]
             [me.lomin.piggybank.logic :refer [for-all there-exists]]))
 
-(def ALWAYS ::always)
+(def START ::start)
 
 (defn get-process-id [[_ data]]
   (:process-id data))
@@ -55,7 +55,7 @@
     event-candidates))
 
 (defn init [model context]
-  (into #{} (combine [#{}] (get model ALWAYS) context)))
+  (into #{} (combine [#{}] (get model START) context)))
 
 (defn flat-set [xs]
   (into #{} cat xs))
@@ -67,7 +67,7 @@
                         (combine event-candidates
                                  (get model event-type)
                                  (assoc context* :event event)))
-                      (combine [#{}] (get model ALWAYS) context*)
+                      (combine [#{}] (get model START) context*)
                       timeline))))
 
 ;; combinators
