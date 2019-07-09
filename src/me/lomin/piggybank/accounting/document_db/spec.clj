@@ -1,4 +1,4 @@
-(ns me.lomin.piggybank.accounting.accounting.spec
+(ns me.lomin.piggybank.accounting.document-db.spec
   (:require [clojure.spec.alpha :as s]
             [me.lomin.piggybank.accounting.spec :as spec]
             [me.lomin.piggybank.spec :refer [variant?]]))

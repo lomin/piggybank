@@ -1,4 +1,4 @@
-(ns me.lomin.piggybank.accounting.model.core
+(ns me.lomin.piggybank.accounting.model
   (:require [clojure.math.combinatorics :as combo]
             [clojure.set :as set]
             [me.lomin.piggybank.logic :refer [for-all there-exists]]

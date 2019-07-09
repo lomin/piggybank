@@ -1,6 +1,6 @@
 (ns me.lomin.piggybank.accounting.interpreter.core
-  (:require [me.lomin.piggybank.accounting.accounting.core :as db]
-            [me.lomin.piggybank.accounting.accounting.core :as accounting]
+  (:require [me.lomin.piggybank.accounting.document-db.core :as db]
+            [me.lomin.piggybank.accounting.document-db.core :as accounting]
             [me.lomin.piggybank.accounting.interpreter.properties :as props]
             [me.lomin.piggybank.interpreter :as interpreter]))
 

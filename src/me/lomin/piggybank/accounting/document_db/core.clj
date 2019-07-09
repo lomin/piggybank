@@ -1,4 +1,4 @@
-(ns me.lomin.piggybank.accounting.accounting.core)
+(ns me.lomin.piggybank.accounting.document-db.core)
 
 (def META-LINK {:cash-up-id :meta :document-id :meta})
 

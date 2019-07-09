@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [me.lomin.piggybank.accounting.interpreter.core :as intp]
             [me.lomin.piggybank.accounting.interpreter.spec :as spec]
-            [me.lomin.piggybank.accounting.model.core :as model]
+            [me.lomin.piggybank.accounting.model :as model]
             [me.lomin.piggybank.checker :refer [=*] :as checker]
             [me.lomin.piggybank.model :refer [all
                                               always

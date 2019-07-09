@@ -1,6 +1,6 @@
 (ns me.lomin.piggybank.accounting.timeline-test
   (:require [clojure.test :refer :all]
-            [me.lomin.piggybank.accounting.model.core :refer [then-for-every-past-time-slot] :as model]
+            [me.lomin.piggybank.accounting.model :refer [then-for-every-past-time-slot] :as model]
             [me.lomin.piggybank.model :refer [all
                                               always
                                               choose

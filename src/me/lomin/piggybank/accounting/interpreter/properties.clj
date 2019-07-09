@@ -1,6 +1,6 @@
 (ns me.lomin.piggybank.accounting.interpreter.properties
   (:require [clojure.set :as set]
-            [me.lomin.piggybank.accounting.accounting.core :as accounting]))
+            [me.lomin.piggybank.accounting.document-db.core :as accounting]))
 
 (defn- collect-links [f state]
   (reduce-kv f
