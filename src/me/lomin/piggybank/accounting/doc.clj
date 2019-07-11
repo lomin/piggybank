@@ -1,6 +1,5 @@
 (ns me.lomin.piggybank.accounting.doc
   (:require [me.lomin.piggybank.accounting.interpreter.core :as intp]
-            [me.lomin.piggybank.accounting.interpreter.properties :as props]
             [me.lomin.piggybank.accounting.interpreter.spec :as spec]
             [me.lomin.piggybank.accounting.model :as model]
             [me.lomin.piggybank.checker :as checker]
@@ -65,16 +64,16 @@
        23))
 
 (defn multi-threaded-simple-model []
-  (print-source model/multi-threaded-simple-model))
+  (print-source me.lomin.piggybank.accounting.model/multi-threaded-simple-model))
 
 (defn single-threaded-simple-model []
-  (print-source model/single-threaded-simple-model))
+  (print-source me.lomin.piggybank.accounting.model/single-threaded-simple-model))
 
 (defn reduced-multi-threaded-simple-model []
-  (print-source model/reduced-multi-threaded-simple-model))
+  (print-source me.lomin.piggybank.accounting.model/reduced-multi-threaded-simple-model))
 
 (defn reduced-single-threaded-simple-model []
-  (print-source model/reduced-single-threaded-simple-model))
+  (print-source me.lomin.piggybank.accounting.model/reduced-single-threaded-simple-model))
 
 (defn timelines-reduced-multi-threaded-simple-model [length]
   (timeline/all-timelines-of-length length
@@ -104,7 +103,10 @@
 (def simple-model-length 7)
 
 (defn check-multi-threaded-simple-model []
-  (check* model/multi-threaded-simple-model simple-model-length nil))
+  (-> (check* model/multi-threaded-simple-model
+              simple-model-length
+              [:check-count :max-check-count :property-violated :timeline :accounting :balance])
+      (assoc :accounting {:transfers {1 1}})))
 
 (defn check-single-threaded-simple-model []
   (check* model/single-threaded-simple-model
@@ -116,13 +118,13 @@
      simple-model-length))
 
 (defn number-of-checked-time-slots []
-  (:max-check-count (check* model/multi-threaded-simple-model simple-model-length nil)))
+  (:check-count (check* model/multi-threaded-simple-model simple-model-length nil)))
 
 (defn lost-updates? []
-  (print-source props/lost-updates?))
+  (print-source me.lomin.piggybank.accounting.interpreter.properties/lost-updates?))
 
 (defn single-threaded+inmemory-balance+eventually-consistent-accounting-model []
-  (print-source model/single-threaded+inmemory-balance+eventually-consistent-accounting-model))
+  (print-source me.lomin.piggybank.accounting.model/single-threaded+inmemory-balance+eventually-consistent-accounting-model))
 
 (defn check-single-threaded+inmemory-balance+eventually-consistent-accounting-model []
   (check* model/single-threaded+inmemory-balance+eventually-consistent-accounting-model
