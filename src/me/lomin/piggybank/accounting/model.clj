@@ -6,11 +6,11 @@
                                               always
                                               choose
                                               continue
-                                              end
                                               generate-incoming
                                               make-model
                                               multi-threaded
                                               only
+                                              restart
                                               START
                                               then] :as model]))
 
@@ -34,6 +34,21 @@
   (writing-process-finished? timeline))
 
 ;; models
+
+(def example-model-0
+  (partial make-model
+           {START             (all (generate-incoming multi-threaded
+                                                      [:process {:amount 1}]
+                                                      [:process {:amount -1}]))
+            :process          (continue)}))
+
+(def example-model-1
+  (partial make-model
+           {START             (all (generate-incoming multi-threaded
+                                                      [:process {:amount 1}]
+                                                      [:process {:amount -1}]))
+            :process          (all (then :accounting-write))
+            :accounting-write (continue)}))
 
 (def multi-threaded-simple-model
   (partial make-model
@@ -107,7 +122,7 @@
            {START             (all (generate-incoming single-threaded
                                                       [:process {:amount 1}]
                                                       [:process {:amount -1}]))
-            :restart          (all (end))
+            :restart          (all (restart))
             :process          (choose (then-for-every-past-time-slot :restart)
                                       (then :accounting-read))
             :accounting-read  (choose (then-for-every-past-time-slot :restart)
@@ -115,4 +130,4 @@
             :accounting-write (choose (then-for-every-past-time-slot :restart)
                                       (then :balance-write))
             :balance-write    (choose (then-for-every-past-time-slot :restart)
-                                      (end))}))
+                                      (restart))}))

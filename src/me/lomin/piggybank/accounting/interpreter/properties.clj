@@ -79,7 +79,7 @@
 (defn any-property-violation [{:keys [universe]}]
   (cond
     (not (all-links-exist? universe)) :all-links-must-point-to-an-existing-document
-    (not (db-state>=0? universe)) :db-state-must-always-be>=0
+    (not (db-state>=0? universe)) :accounting-balance-must-always-be>=0
     (lost-updates? universe) :there-must-be-no-lost-updates
     (branches-come-to-different-results? universe) :all-branches-must-come-to-the-same-result
     (more-than-one-document-change-per-time-slot? universe) :there-must-be-only-one-document-change-per-timeslot))

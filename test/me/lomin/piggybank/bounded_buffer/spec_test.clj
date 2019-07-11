@@ -1,7 +1,7 @@
 (ns me.lomin.piggybank.bounded-buffer.spec-test
   (:require [clojure.test :refer :all]
-            [me.lomin.piggybank.bounded-buffer.spec :as spec]
-            [me.lomin.piggybank.checker :refer [spec-invalid? spec-valid?]]))
+            [me.lomin.piggybank.asserts :refer [spec-invalid? spec-valid?]]
+            [me.lomin.piggybank.bounded-buffer.spec :as spec]))
 
 (deftest ^:unit bounded-buffer-spec-test
   (spec-valid? ::spec/universe spec/empty-universe)

@@ -31,13 +31,15 @@
   (fn [event-candidates {[e-type] :event :as context}]
     (set/difference (combine-f event-candidates
                                (make-event-candidates event-types context))
-                    (make-event-candidates-default #{e-type} context))))
+                    (make-event-candidates-default (clojure.set/difference #{e-type}
+                                                                           (set event-types))
+                                                   context))))
 
-(defn- generate-incoming-events-from [timeline events]
+(defn generate-incoming-events-from [timeline events]
   (map (fn [event id]
          (update event 1 assoc :process-id id))
        events
-       (iterate inc (get-next-process-id timeline))))
+       (repeat (get-next-process-id timeline))))
 
 (defn- combine [event-candidates combinators context]
   (if combinators
@@ -114,7 +116,7 @@
                                         combinators)))))
 
 (defn continue [] (all (then)))
-(defn end [] (only))
+(defn restart [] (only))
 
 ;; combinator of combinators
 

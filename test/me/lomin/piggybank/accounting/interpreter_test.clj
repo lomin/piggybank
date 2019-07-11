@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [me.lomin.piggybank.accounting.interpreter.core :as intp]
             [me.lomin.piggybank.accounting.interpreter.spec :as spec]
-            [me.lomin.piggybank.checker :refer [=*]]))
+            [me.lomin.piggybank.asserts :refer [=*]]))
 
 (def test-state spec/example-universe)
 
@@ -68,7 +68,7 @@
                        [:accounting-write {:process-id 1, :amount -1}]
                        [:balance-write {:process-id 0, :amount -1}]
                        [:balance-write {:process-id 1, :amount -1}]]]
-    (is (= {:property-violated {:name     :db-state-must-always-be>=0
+    (is (= {:property-violated {:name     :accounting-balance-must-always-be>=0
                                 :timeline [[:stuttering]
                                            [:process {:process-id 0, :amount -1}]
                                            [:process {:process-id 1, :amount -1}]

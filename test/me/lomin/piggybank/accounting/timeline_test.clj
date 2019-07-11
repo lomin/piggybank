@@ -4,11 +4,11 @@
             [me.lomin.piggybank.model :refer [all
                                               always
                                               choose
-                                              end
                                               generate-incoming
                                               make-model
                                               multi-threaded
                                               only
+                                              restart
                                               START
                                               then]]
             [me.lomin.piggybank.timeline :as timeline]
@@ -25,61 +25,71 @@
          (count (timeline/all-timelines-of-length 7 model/multi-threaded-simple-model))))
   (is (= #{[[:stuttering]]
            [[:process {:process-id 0, :amount 1}]]
-           [[:process {:process-id 1, :amount -1}]]}
+           [[:process {:process-id 0, :amount -1}]]}
          (successor-timelines model/multi-threaded-simple-model
                               [])))
 
   (is (= #{[[:stuttering] [:stuttering]]
            [[:stuttering] [:process {:process-id 0, :amount 1}]]
-           [[:stuttering] [:process {:process-id 1, :amount -1}]]}
+           [[:stuttering] [:process {:process-id 0, :amount -1}]]}
          (successor-timelines model/multi-threaded-simple-model
                               [[:stuttering]])))
 
   (is (= #{[[:stuttering] [:stuttering] [:stuttering]]
            [[:stuttering] [:stuttering] [:process {:process-id 0, :amount 1}]]
-           [[:stuttering] [:stuttering] [:process {:process-id 1, :amount -1}]]}
+           [[:stuttering] [:stuttering] [:process {:process-id 0, :amount -1}]]}
          (successor-timelines model/multi-threaded-simple-model
                               [[:stuttering] [:stuttering]])))
 
   (is (= #{[[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}]]
            [[:process {:process-id 0, :amount 1}] [:stuttering]]
            [[:process {:process-id 0, :amount 1}] [:process {:process-id 1, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:process {:process-id 2, :amount -1}]]}
+           [[:process {:process-id 0, :amount 1}] [:process {:process-id 1, :amount -1}]]}
          (successor-timelines model/multi-threaded-simple-model
                               [[:process {:process-id 0 :amount 1}]])))
 
   (is (= #{[[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:accounting-write {:process-id 0, :amount 1}]]
            [[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:stuttering]]
            [[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:process {:process-id 1, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:process {:process-id 2, :amount -1}]]}
+           [[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:process {:process-id 1, :amount -1}]]}
          (successor-timelines model/multi-threaded-simple-model
                               [[:process {:process-id 0 :amount 1}] [:accounting-read {:process-id 0 :amount 1}]]))))
 
 (deftest ^:unit make-all-timeline-test
-  (is (= #{[[:stuttering] [:stuttering]]
-           [[:stuttering] [:process {:process-id 0, :amount 1}]]
-           [[:stuttering] [:process {:process-id 1, :amount -1}]]
-           [[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:stuttering]]
-           [[:process {:process-id 0, :amount 1}] [:process {:process-id 1, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:process {:process-id 2, :amount -1}]]}
+  (is (= #{[[:process {:amount 1, :process-id 0}]
+            [:accounting-read {:amount 1, :process-id 0}]]
+           [[:process {:amount 1, :process-id 0}] [:process {:amount -1, :process-id 1}]]
+           [[:process {:amount 1, :process-id 0}] [:process {:amount 1, :process-id 1}]]
+           [[:process {:amount 1, :process-id 0}] [:stuttering]]
+           [[:stuttering] [:process {:amount -1, :process-id 0}]]
+           [[:stuttering] [:process {:amount 1, :process-id 0}]]
+           [[:stuttering] [:stuttering]]}
          (second (timeline/infinite-timelines-seq model/multi-threaded-simple-model
                                                   #{[[:stuttering]] [[:process {:process-id 0 :amount 1}]]}))))
 
-  (is (= #{[[:stuttering] [:stuttering]]
-           [[:stuttering] [:process {:process-id 0, :amount 1}]]
-           [[:stuttering] [:process {:process-id 1, :amount -1}]]
-           [[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:stuttering]]
-           [[:process {:process-id 0, :amount 1}] [:process {:process-id 1, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:process {:process-id 2, :amount -1}]]
-           [[:process {:process-id 1, :amount -1}] [:accounting-read {:process-id 1, :amount -1}]]
-           [[:process {:process-id 1, :amount -1}] [:stuttering]]
-           [[:process {:process-id 1, :amount -1}] [:process {:process-id 2, :amount 1}]]
-           [[:process {:process-id 1, :amount -1}] [:process {:process-id 3, :amount -1}]]}
+  (is (= #{[[:process {:amount -1, :process-id 0}]
+            [:accounting-read {:amount -1, :process-id 0}]]
+           [[:process {:amount -1, :process-id 0}]
+            [:process {:amount -1, :process-id 1}]]
+           [[:process {:amount -1, :process-id 0}] [:process {:amount 1, :process-id 1}]]
+           [[:process {:amount -1, :process-id 0}] [:stuttering]]
+           [[:process {:amount 1, :process-id 0}]
+            [:accounting-read {:amount 1, :process-id 0}]]
+           [[:process {:amount 1, :process-id 0}] [:process {:amount -1, :process-id 1}]]
+           [[:process {:amount 1, :process-id 0}] [:process {:amount 1, :process-id 1}]]
+           [[:process {:amount 1, :process-id 0}] [:stuttering]]
+           [[:stuttering] [:process {:amount -1, :process-id 0}]]
+           [[:stuttering] [:process {:amount 1, :process-id 0}]]
+           [[:stuttering] [:stuttering]]}
          (nth (timeline/infinite-timelines-seq model/multi-threaded-simple-model
                                                timeline/EMPTY-TIMELINES)
               2))))
+
+(deftest ^:unit ^:focus must-start-with-process-id-0-test
+  (is (= nil
+         (seq (filter (fn [[[_ {process-id :process-id} :as first-event]]]
+                        (not= 0 process-id))
+                      (timeline/all-timelines-of-length 3 model/example-model-0))))))
 
 (deftest ^:unit single-threaded-timeline-test
   (is (= 3367
@@ -87,19 +97,19 @@
 
   (is (= #{[[:stuttering]]
            [[:process {:process-id 0, :amount 1}]]
-           [[:process {:process-id 1, :amount -1}]]}
+           [[:process {:process-id 0, :amount -1}]]}
          (successor-timelines model/single-threaded-simple-model
                               [])))
 
   (is (= #{[[:stuttering] [:stuttering]]
            [[:stuttering] [:process {:process-id 0, :amount 1}]]
-           [[:stuttering] [:process {:process-id 1, :amount -1}]]}
+           [[:stuttering] [:process {:process-id 0, :amount -1}]]}
          (successor-timelines model/single-threaded-simple-model
                               [[:stuttering]])))
 
   (is (= #{[[:stuttering] [:stuttering] [:stuttering]]
            [[:stuttering] [:stuttering] [:process {:process-id 0, :amount 1}]]
-           [[:stuttering] [:stuttering] [:process {:process-id 1, :amount -1}]]}
+           [[:stuttering] [:stuttering] [:process {:process-id 0, :amount -1}]]}
          (successor-timelines model/single-threaded-simple-model
                               [[:stuttering] [:stuttering]])))
 
@@ -140,8 +150,8 @@
                                            (partial make-model
                                                     {START          (all (generate-incoming model/single-threaded
                                                                                             [:process {:amount 1}]))
-                                                     :restart       (all (end))
+                                                     :restart       (all (restart))
                                                      :process       (choose (model/then-for-every-past-time-slot :restart)
                                                                             (then :balance-write))
                                                      :balance-write (choose (model/then-for-every-past-time-slot :restart)
-                                                                            (end))})))))
+                                                                            (restart))})))))

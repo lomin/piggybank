@@ -6,6 +6,7 @@
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/test.check "0.9.0"]
                  [org.clojure/math.combinatorics "0.1.4"]
+                 [progrock "0.1.2"]
                  [me.lomin/sayang "0.3.0"]]
 
   :test-selectors {:default    #(not (some #{:slow-model} (keys %)))
@@ -21,7 +22,6 @@
   :middleware [ultra.plugin/middleware]
 
   :profiles {:dev  {:dependencies [[org.clojure/tools.namespace "0.2.11"]
-                                   [progrock "0.1.2"]
                                    [orchestra "2018.08.19-1"]]
                     :plugins      [[com.jakemccrary/lein-test-refresh "0.23.0"]
                                    [lein-kibit "0.1.6"]
