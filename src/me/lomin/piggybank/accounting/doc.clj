@@ -1,5 +1,6 @@
 (ns me.lomin.piggybank.accounting.doc
   (:require [me.lomin.piggybank.accounting.interpreter.core :as intp]
+            [me.lomin.piggybank.accounting.interpreter.properties :as props]
             [me.lomin.piggybank.accounting.interpreter.spec :as spec]
             [me.lomin.piggybank.accounting.model :as model]
             [me.lomin.piggybank.checker :as checker]
@@ -66,12 +67,28 @@
 (defn multi-threaded-simple-model []
   (print-source model/multi-threaded-simple-model))
 
+(defn single-threaded-simple-model []
+  (print-source model/single-threaded-simple-model))
+
 (defn reduced-multi-threaded-simple-model []
   (print-source model/reduced-multi-threaded-simple-model))
+
+(defn reduced-single-threaded-simple-model []
+  (print-source model/reduced-single-threaded-simple-model))
 
 (defn timelines-reduced-multi-threaded-simple-model [length]
   (timeline/all-timelines-of-length length
                                     model/reduced-multi-threaded-simple-model))
+
+(defn count-timelines-reduced-multi-threaded-simple-model [length]
+  (count (timelines-reduced-multi-threaded-simple-model length)))
+
+(defn timelines-reduced-single-threaded-simple-model [length]
+  (timeline/all-timelines-of-length 3
+                                    model/reduced-single-threaded-simple-model))
+
+(defn count-timelines-reduced-single-threaded-simple-model [length]
+  (count (timelines-reduced-single-threaded-simple-model length)))
 
 (defn valid-sample-timeline-reduced-multi-threaded-simple-model []
   (last (seq (timelines-reduced-multi-threaded-simple-model 4))))
@@ -82,5 +99,32 @@
    [:accounting-read {:amount 1, :process-id 0}]
    [:accounting-read {:amount 1, :process-id 0}]])
 
-(defn check-multi-threaded-simple-model [length]
-  (check model/multi-threaded-simple-model 7 nil))
+(def check* (memoize check))
+
+(def simple-model-length 7)
+
+(defn check-multi-threaded-simple-model []
+  (check* model/multi-threaded-simple-model simple-model-length nil))
+
+(defn check-single-threaded-simple-model []
+  (check* model/single-threaded-simple-model
+          simple-model-length
+          [:check-count :max-check-count :property-violated]))
+
+(defn number-of-possible-timelines []
+  (/ (:max-check-count (check* model/multi-threaded-simple-model simple-model-length nil))
+     simple-model-length))
+
+(defn number-of-checked-time-slots []
+  (:max-check-count (check* model/multi-threaded-simple-model simple-model-length nil)))
+
+(defn lost-updates? []
+  (print-source props/lost-updates?))
+
+(defn single-threaded+inmemory-balance+eventually-consistent-accounting-model []
+  (print-source model/single-threaded+inmemory-balance+eventually-consistent-accounting-model))
+
+(defn check-single-threaded+inmemory-balance+eventually-consistent-accounting-model []
+  (check* model/single-threaded+inmemory-balance+eventually-consistent-accounting-model
+          12
+          [:check-count :max-check-count :property-violated :timeline]))

@@ -19,8 +19,8 @@
           (when (or (:done? progress)
                     (= (mod (:progress progress) partition-size) 0))
             (pr/print progress)))
-         (if (< 1 by)
-           (recur action (dec by))))))))
+        (if (< 1 by)
+          (recur action (dec by))))))))
 
 (defn make-blocking-progress-bar
   ([] (make-blocking-progress-bar {:max 100}))

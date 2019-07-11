@@ -36,14 +36,14 @@
 (defn db-state>=0? [state]
   (<= 0 (add-all-summands (accounting/follow-next-links state))))
 
-(defn all-event-ids-from-cash-ups [universe]
+(defn all-event-ids-from-accounting [universe]
   (into #{} get-event-ids (accounting/follow-next-links universe)))
 
 (defn all-event-ids-from-balance [universe]
   (get-in universe [:balance :processes]))
 
 (defn lost-updates? [universe]
-  (not (set/superset? (all-event-ids-from-cash-ups universe)
+  (not (set/superset? (all-event-ids-from-accounting universe)
                       (all-event-ids-from-balance universe))))
 
 (defn branches-come-to-different-results? [state]
