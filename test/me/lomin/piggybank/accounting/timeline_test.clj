@@ -85,7 +85,7 @@
                                                timeline/EMPTY-TIMELINES)
               2))))
 
-(deftest ^:unit ^:focus must-start-with-process-id-0-test
+(deftest ^:unit must-start-with-process-id-0-test
   (is (= nil
          (seq (filter (fn [[[_ {process-id :process-id} :as first-event]]]
                         (not= 0 process-id))

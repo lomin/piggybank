@@ -52,15 +52,17 @@
 (defn flat-set [xs]
   (into #{} cat xs))
 
-(defn make-model [model
-                  {:keys [timeline] :as context}]
-  (let [context* (assoc context :model model)]
-    (flat-set (reduce (fn [event-candidates [event-type :as event]]
-                        (combine event-candidates
-                                 (get model event-type)
-                                 (assoc context* :event event)))
-                      (combine [#{}] (get model START) context*)
-                      timeline))))
+(defn make-model
+  ([model] (partial make-model model))
+  ([model
+    {:keys [timeline] :as context}]
+   (let [context* (assoc context :model model)]
+     (flat-set (reduce (fn [event-candidates [event-type :as event]]
+                         (combine event-candidates
+                                  (get model event-type)
+                                  (assoc context* :event event)))
+                       (combine [#{}] (get model START) context*)
+                       timeline)))))
 
 ;; combinators
 

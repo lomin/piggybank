@@ -16,10 +16,11 @@
          state-1*)))))
 
 (defn check
-  ([{:keys [model length keys interpreter universe]}]
+  ([{:keys [model length keys interpreter universe partitions]}]
    (let [timelines (timeline/all-timelines-of-length length model)
          max-check-count (* length (count timelines))
-         progress-bar (pgb/make-fuzzy-progress-bar max-check-count)
+         progress-bar (pgb/make-fuzzy-progress-bar {:max max-check-count
+                                                    :partitions partitions})
          result (-> (r/fold (check-properties universe)
                             (r/map (comp interpreter
                                          (fn [timeline]
