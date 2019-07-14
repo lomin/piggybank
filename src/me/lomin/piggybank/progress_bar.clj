@@ -16,10 +16,11 @@
           :complete (change-f pr/done)
           :reset (change-f curr (constantly 0)))
         (let [progress @curr]
-          (when (or (:done? progress)
+          (when (or (= 1 (:progress progress))
+                    (= max* (:progress progress))
                     (= (mod (:progress progress) partition-size) 0))
             (pr/print progress)))
-        (if (< 1 by)
+        (when (< 1 by)
           (recur action (dec by))))))))
 
 (defn make-blocking-progress-bar

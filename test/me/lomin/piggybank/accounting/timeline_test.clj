@@ -21,66 +21,35 @@
   (timeline/successor-timelines [model timeline]))
 
 (deftest ^:unit multi-threaded-timeline-test
-  (is (= 44453
+  (is (= 13932
          (count (timeline/all-timelines-of-length 7 model/multi-threaded-simple-model))))
-  (is (= #{[[:stuttering]]
-           [[:process {:process-id 0, :amount 1}]]
+  (is (= #{[[:process {:process-id 0, :amount 1}]]
            [[:process {:process-id 0, :amount -1}]]}
          (successor-timelines model/multi-threaded-simple-model
                               [])))
 
-  (is (= #{[[:stuttering] [:stuttering]]
-           [[:stuttering] [:process {:process-id 0, :amount 1}]]
-           [[:stuttering] [:process {:process-id 0, :amount -1}]]}
-         (successor-timelines model/multi-threaded-simple-model
-                              [[:stuttering]])))
-
-  (is (= #{[[:stuttering] [:stuttering] [:stuttering]]
-           [[:stuttering] [:stuttering] [:process {:process-id 0, :amount 1}]]
-           [[:stuttering] [:stuttering] [:process {:process-id 0, :amount -1}]]}
-         (successor-timelines model/multi-threaded-simple-model
-                              [[:stuttering] [:stuttering]])))
-
-  (is (= #{[[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:stuttering]]
-           [[:process {:process-id 0, :amount 1}] [:process {:process-id 1, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:process {:process-id 1, :amount -1}]]}
-         (successor-timelines model/multi-threaded-simple-model
-                              [[:process {:process-id 0 :amount 1}]])))
-
-  (is (= #{[[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:accounting-write {:process-id 0, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:stuttering]]
-           [[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:process {:process-id 1, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:process {:process-id 1, :amount -1}]]}
+  (is (= #{[[:process {:amount 1, :process-id 0}]
+            [:accounting-read {:amount 1, :process-id 0}]
+            [:accounting-write {:amount 1, :process-id 0}]]
+           [[:process {:amount 1, :process-id 0}]
+            [:accounting-read {:amount 1, :process-id 0}]
+            [:process {:amount -1, :process-id 1}]]
+           [[:process {:amount 1, :process-id 0}]
+            [:accounting-read {:amount 1, :process-id 0}]
+            [:process {:amount 1, :process-id 1}]]}
          (successor-timelines model/multi-threaded-simple-model
                               [[:process {:process-id 0 :amount 1}] [:accounting-read {:process-id 0 :amount 1}]]))))
 
 (deftest ^:unit make-all-timeline-test
-  (is (= #{[[:process {:amount 1, :process-id 0}]
-            [:accounting-read {:amount 1, :process-id 0}]]
-           [[:process {:amount 1, :process-id 0}] [:process {:amount -1, :process-id 1}]]
-           [[:process {:amount 1, :process-id 0}] [:process {:amount 1, :process-id 1}]]
-           [[:process {:amount 1, :process-id 0}] [:stuttering]]
-           [[:stuttering] [:process {:amount -1, :process-id 0}]]
-           [[:stuttering] [:process {:amount 1, :process-id 0}]]
-           [[:stuttering] [:stuttering]]}
-         (second (timeline/infinite-timelines-seq model/multi-threaded-simple-model
-                                                  #{[[:stuttering]] [[:process {:process-id 0 :amount 1}]]}))))
-
   (is (= #{[[:process {:amount -1, :process-id 0}]
             [:accounting-read {:amount -1, :process-id 0}]]
            [[:process {:amount -1, :process-id 0}]
             [:process {:amount -1, :process-id 1}]]
            [[:process {:amount -1, :process-id 0}] [:process {:amount 1, :process-id 1}]]
-           [[:process {:amount -1, :process-id 0}] [:stuttering]]
            [[:process {:amount 1, :process-id 0}]
             [:accounting-read {:amount 1, :process-id 0}]]
            [[:process {:amount 1, :process-id 0}] [:process {:amount -1, :process-id 1}]]
-           [[:process {:amount 1, :process-id 0}] [:process {:amount 1, :process-id 1}]]
-           [[:process {:amount 1, :process-id 0}] [:stuttering]]
-           [[:stuttering] [:process {:amount -1, :process-id 0}]]
-           [[:stuttering] [:process {:amount 1, :process-id 0}]]
-           [[:stuttering] [:stuttering]]}
+           [[:process {:amount 1, :process-id 0}] [:process {:amount 1, :process-id 1}]]}
          (nth (timeline/infinite-timelines-seq model/multi-threaded-simple-model
                                                timeline/EMPTY-TIMELINES)
               2))))
@@ -92,34 +61,19 @@
                       (timeline/all-timelines-of-length 3 model/example-model-0))))))
 
 (deftest ^:unit single-threaded-timeline-test
-  (is (= 3367
+  (is (= 8
          (count (timeline/all-timelines-of-length 10 model/single-threaded-simple-model))))
 
-  (is (= #{[[:stuttering]]
-           [[:process {:process-id 0, :amount 1}]]
+  (is (= #{[[:process {:process-id 0, :amount 1}]]
            [[:process {:process-id 0, :amount -1}]]}
          (successor-timelines model/single-threaded-simple-model
                               [])))
 
-  (is (= #{[[:stuttering] [:stuttering]]
-           [[:stuttering] [:process {:process-id 0, :amount 1}]]
-           [[:stuttering] [:process {:process-id 0, :amount -1}]]}
-         (successor-timelines model/single-threaded-simple-model
-                              [[:stuttering]])))
-
-  (is (= #{[[:stuttering] [:stuttering] [:stuttering]]
-           [[:stuttering] [:stuttering] [:process {:process-id 0, :amount 1}]]
-           [[:stuttering] [:stuttering] [:process {:process-id 0, :amount -1}]]}
-         (successor-timelines model/single-threaded-simple-model
-                              [[:stuttering] [:stuttering]])))
-
-  (is (= #{[[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:stuttering]]}
+  (is (= #{[[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}]]}
          (successor-timelines model/single-threaded-simple-model
                               [[:process {:process-id 0 :amount 1}]])))
 
-  (is (= #{[[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:accounting-write {:process-id 0, :amount 1}]]
-           [[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:stuttering]]}
+  (is (= #{[[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:accounting-write {:process-id 0, :amount 1}]]}
          (successor-timelines model/single-threaded-simple-model
                               [[:process {:process-id 0 :amount 1}] [:accounting-read {:process-id 0 :amount 1}]]))))
 

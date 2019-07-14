@@ -54,8 +54,7 @@
   (make-model
    {START             (all (generate-incoming multi-threaded
                                               [:process {:amount 1}]
-                                              [:process {:amount -1}])
-                           (always [:stuttering]))
+                                              [:process {:amount -1}]))
     :process          (all (then :accounting-read))
     :accounting-read  (all (then :accounting-write))
     :accounting-write (all (then :balance-write))
@@ -64,8 +63,7 @@
 (def reduced-multi-threaded-simple-model
   (make-model
    {START             (all (generate-incoming multi-threaded
-                                              [:process {:amount 1}])
-                           (always [:stuttering]))
+                                              [:process {:amount 1}]))
     :process          (all (then :accounting-read))
     :accounting-read  (all (then :accounting-write))
     :accounting-write (continue)}))
@@ -73,8 +71,7 @@
 (def reduced-single-threaded-simple-model
   (make-model
    {START             (all (generate-incoming single-threaded
-                                              [:process {:amount 1}])
-                           (always [:stuttering]))
+                                              [:process {:amount 1}]))
     :process          (all (then :accounting-read))
     :accounting-read  (all (then :accounting-write))
     :accounting-write (continue)}))
@@ -83,8 +80,7 @@
   (make-model
    {START             (all (generate-incoming single-threaded
                                               [:process {:amount 1}]
-                                              [:process {:amount -1}])
-                           (always [:stuttering]))
+                                              [:process {:amount -1}]))
     :process          (all (then :accounting-read))
     :accounting-read  (all (then :accounting-write))
     :accounting-write (all (then :balance-write))

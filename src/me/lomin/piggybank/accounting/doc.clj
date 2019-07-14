@@ -3,6 +3,7 @@
             [me.lomin.piggybank.accounting.interpreter.spec :as spec]
             [me.lomin.piggybank.accounting.model :as model]
             [me.lomin.piggybank.checker :as checker]
+            [me.lomin.piggybank.doc :refer [print-check print-data print-source]]
             [me.lomin.piggybank.model :refer [all
                                               always
                                               choose
@@ -12,28 +13,6 @@
                                               multi-threaded
                                               then]]
             [me.lomin.piggybank.timeline :as timeline]))
-
-(def counter (atom 0))
-
-(defn return-listing []
-  (str "listing-" (swap! counter inc)))
-
-(defmacro print-source [x]
-  `(do (clojure.pprint/with-pprint-dispatch
-         clojure.pprint/code-dispatch
-         (clojure.pprint/pprint
-           (clojure.edn/read-string (with-out-str (clojure.repl/source ~x)))))
-       (return-listing)))
-
-(defn print-check [chk]
-  (let [result (chk)]
-    (println)
-    (clojure.pprint/pprint result)
-    (return-listing)))
-
-(defn print-data [data]
-  (clojure.pprint/pprint data)
-  (return-listing))
 
 (defn check
   ([model length]
@@ -45,6 +24,8 @@
                    :interpreter intp/interpret-timeline
                    :universe    spec/empty-universe
                    :partitions  5})))
+
+(def check* (memoize check))
 
 (defn example-accounting-events []
   [:process {:amount 1, :process-id 0} :doc "Eine Anfrage mit der Prozess-Id 0 zur Einzahlung von 1 Euro wurde gestartet."]
@@ -72,10 +53,10 @@
 
 (defn universe-after-update []
   (print-data
-    (let [[_ {:keys [amount process-id]}] event-0*]
-      (-> universe-0*
-          (update-in [:accounting :transfers] #(assoc % process-id amount))
-          (update-in [:balance :amount] #(+ % amount))))))
+   (let [[_ {:keys [amount process-id]}] event-0*]
+     (-> universe-0*
+         (update-in [:accounting :transfers] #(assoc % process-id amount))
+         (update-in [:balance :amount] #(+ % amount))))))
 
 (defn example-timeline-0 []
   (print-data (first (seq (timeline/all-timelines-of-length 3 model/example-model-0)))))
@@ -136,8 +117,6 @@
 (defn print-invalid-sample-timeline-reduced-multi-threaded-simple-model []
   (print-source me.lomin.piggybank.accounting.doc/invalid-sample-timeline-reduced-multi-threaded-simple-model))
 
-(def check* (memoize check))
-
 (def simple-model-length 7)
 
 (defn check-multi-threaded-simple-model []
@@ -148,8 +127,8 @@
 
 (defn check-single-threaded-simple-model []
   (print-check #(check* model/single-threaded-simple-model
-                       simple-model-length
-                       [:check-count :max-check-count :property-violated])))
+                        simple-model-length
+                        [:check-count :max-check-count :property-violated])))
 
 (defn number-of-possible-timelines []
   (/ (:max-check-count (check* model/multi-threaded-simple-model simple-model-length nil))

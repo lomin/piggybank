@@ -19,26 +19,16 @@
            [[:process {:amount -1, :process-id 0}]
             [:process {:amount -1, :process-id 1}]]
            [[:process {:amount -1, :process-id 0}] [:process {:amount 1, :process-id 1}]]
-           [[:process {:amount -1, :process-id 0}] [:stuttering]]
            [[:process {:amount 1, :process-id 0}]
             [:accounting-read {:amount 1, :process-id 0}]]
            [[:process {:amount 1, :process-id 0}] [:process {:amount -1, :process-id 1}]]
-           [[:process {:amount 1, :process-id 0}] [:process {:amount 1, :process-id 1}]]
-           [[:process {:amount 1, :process-id 0}] [:stuttering]]
-           [[:stuttering] [:process {:amount -1, :process-id 0}]]
-           [[:stuttering] [:process {:amount 1, :process-id 0}]]
-           [[:stuttering] [:stuttering]]}
+           [[:process {:amount 1, :process-id 0}] [:process {:amount 1, :process-id 1}]]}
          (timeline/all-timelines-of-length 2 model/multi-threaded-simple-model)))
 
   (is (= #{[[:process {:amount -1, :process-id 0}]
             [:accounting-read {:amount -1, :process-id 0}]]
-           [[:process {:amount -1, :process-id 0}] [:stuttering]]
            [[:process {:amount 1, :process-id 0}]
-            [:accounting-read {:amount 1, :process-id 0}]]
-           [[:process {:amount 1, :process-id 0}] [:stuttering]]
-           [[:stuttering] [:process {:amount -1, :process-id 0}]]
-           [[:stuttering] [:process {:amount 1, :process-id 0}]]
-           [[:stuttering] [:stuttering]]}
+            [:accounting-read {:amount 1, :process-id 0}]]}
          (timeline/all-timelines-of-length 2 model/single-threaded-simple-model))))
 
 (deftest ^:unit choose-test
@@ -74,8 +64,8 @@
                                                             [:cash-up :start] {:cash-up-id 0
                                                                                :document-id 0}}}}
           :balance {:amount 1, :processes #{0}}
-          :check-count 64938
-          :max-check-count 311171
+          :check-count 20481
+          :max-check-count 97524
           :property-violated {:name :there-must-be-no-lost-updates
                               :timeline [[:process {:amount 1, :process-id 0}]
                                          [:process {:amount 1, :process-id 1}]
@@ -87,7 +77,7 @@
          (check model/multi-threaded-simple-model 7 [:check-count :property-violated :accounting :max-check-count :balance]))))
 
 (deftest ^:model single-threaded-model-test
-  (is (= {:check-count 33670 :max-check-count 33670}
+  (is (= {:check-count 80 :max-check-count 80}
          (check model/single-threaded-simple-model 10 [:check-count :max-check-count :property-violated]))))
 
 (deftest ^:model single-threaded+pagination-model-test
