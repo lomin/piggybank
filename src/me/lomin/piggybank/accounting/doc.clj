@@ -222,14 +222,10 @@
    ;:timeline            (mapv transform-event (:timeline state))
    :completed-transfers (vec (sort (:processes (:balance state))))
    :balance             (merge {(symbol "db") (or (:amount (:balance state)) 0)}
-                               (comment reduce-kv (fn [result k v]
-                                                    (assoc result k (get-accounting-local v)))
-                                        {}
-                                        (get-all-local-documents state)))})
-
-(defn hans [graph self state]
-  (prn (make-attrs state))
-  (ugraph/add-nodes-with-attrs graph [self (make-attrs state)]))
+                               (reduce-kv (fn [result k v]
+                                            (assoc result k (:balance v)))
+                                          {}
+                                          (get-all-local-vars state)))})
 
 (defn make-graph [graph state]
   (let [self (make-node state)

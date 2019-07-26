@@ -13,13 +13,14 @@
 (defn set-local-variable [state {pid :process-id} v-name v-value]
   (assoc-in state [pid v-name] v-value))
 
-(defn state-write [state {pid :process-id value :amount}]
+(defn state-write [state {pid :process-id value :amount :as data}]
   (-> state
       (update-in IN-MEMORY-BALANCE + value)
-      (update-in IN-MEMORY-PIDS conj pid)))
+      (update-in IN-MEMORY-PIDS conj pid)
+      (set-local-variable data :balance value)))
 
 (defn check-negative-balance [state {value :amount :as data}]
-  (if (neg? (+ value (get-in state IN-MEMORY-BALANCE)))
+  (if (neg? (+ value (get-local-variable state data :balance)))
     (set-local-variable state data :check-failed true)
     state))
 
@@ -72,11 +73,17 @@
 (defn check-failed? [state data]
   (get-local-variable state data :check-failed))
 
+(defn read+save-balance [state data]
+  (set-local-variable state data :balance (get-in state IN-MEMORY-BALANCE)))
+
+(defn balance-read [state data]
+  (check-negative-balance (read+save-balance state data) data))
+
 (defn interpret-event [state [event-type data]]
   (if (check-failed? state data)
     state
     (condp = event-type
-      :process (check-negative-balance state data)
+      :balance-read (balance-read state data)
       :accounting-read (db-read state data)
       :accounting-write (db-write state data)
       :balance-write (state-write state data)
