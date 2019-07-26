@@ -38,7 +38,7 @@
 (defn check-two-threads-model []
   (print-check #(check-with-buffer-length-1 model/two-threads-model
                                             7)))
-(check* model/two-threads-model 3)
+;(check* model/two-threads-model 3)
 (defn bounded-buffer-universe []
   (print-data (-> (check* model/two-threads-model 3)
                   (dissoc :max-check-count :check-count))))

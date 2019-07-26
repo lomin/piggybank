@@ -1,7 +1,9 @@
 (ns me.lomin.piggybank.checker
   (:require [clojure.core.reducers :as r]
+            [com.rpl.specter :as s]
             [me.lomin.piggybank.progress-bar :as pgb]
-            [me.lomin.piggybank.timeline :as timeline]))
+            [me.lomin.piggybank.timeline :as timeline]
+            [ubergraph.core :as ugraph]))
 
 (def plus (fnil + 0 0))
 
@@ -19,7 +21,7 @@
   ([{:keys [model length keys interpreter universe partitions]}]
    (let [timelines (timeline/all-timelines-of-length length model)
          max-check-count (* length (count timelines))
-         progress-bar (pgb/make-fuzzy-progress-bar {:max max-check-count
+         progress-bar (pgb/make-fuzzy-progress-bar {:max        max-check-count
                                                     :partitions partitions})
          result (-> (r/fold (check-properties universe)
                             (r/map (comp interpreter

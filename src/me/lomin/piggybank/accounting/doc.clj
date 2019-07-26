@@ -1,5 +1,10 @@
 (ns me.lomin.piggybank.accounting.doc
-  (:require [me.lomin.piggybank.accounting.interpreter.core :as intp]
+  (:require [clojure.data.json :as json]
+            [clojure.string :as string]
+            [clojure.string :as str]
+            [com.rpl.specter :as s]
+            [me.lomin.piggybank.accounting.document-db.core :as db]
+            [me.lomin.piggybank.accounting.interpreter.core :as intp]
             [me.lomin.piggybank.accounting.interpreter.spec :as spec]
             [me.lomin.piggybank.accounting.model :as model]
             [me.lomin.piggybank.checker :as checker]
@@ -12,7 +17,10 @@
                                               make-model
                                               multi-threaded
                                               then]]
-            [me.lomin.piggybank.timeline :as timeline]))
+            [me.lomin.piggybank.timeline :as timeline]
+            [ubergraph.core :as ugraph]))
+
+(def START "start")
 
 (defn check
   ([model length]
@@ -53,10 +61,10 @@
 
 (defn universe-after-update []
   (print-data
-   (let [[_ {:keys [amount process-id]}] event-0*]
-     (-> universe-0*
-         (update-in [:accounting :transfers] #(assoc % process-id amount))
-         (update-in [:balance :amount] #(+ % amount))))))
+    (let [[_ {:keys [amount process-id]}] event-0*]
+      (-> universe-0*
+          (update-in [:accounting :transfers] #(assoc % process-id amount))
+          (update-in [:balance :amount] #(+ % amount))))))
 
 (defn example-timeline-0 []
   (print-data (first (seq (timeline/all-timelines-of-length 3 model/example-model-0)))))
@@ -147,3 +155,162 @@
   (print-check #(check* model/single-threaded+inmemory-balance+eventually-consistent-accounting-model
                         12
                         [:check-count :max-check-count :property-violated :timeline])))
+
+;---
+
+(defn get-accounting-db
+  ([state]
+   (let [keyvals (s/select [s/ALL (s/must :transfers) s/ALL]
+                           (db/follow-next-links state))]
+     (reduce (fn [result [k v]]
+               (assoc result k v))
+             {}
+             (for [[xs value] keyvals
+                   x xs]
+               [x value])))))
+
+(defn get-accounting-local
+  ([state]
+   (let [keyvals (s/select [(s/must :transfers) s/ALL]
+                           state)]
+     (reduce (fn [result [k v]]
+               (assoc result k v))
+             {}
+             (for [[xs value] keyvals
+                   x xs]
+               [x value])))))
+
+(defn get-all-process-ids [state]
+  (into [] (distinct) (s/select [(s/must :timeline) s/ALL s/LAST map? (s/must :process-id)]
+                                state)))
+
+(defn get-all-local-vars [state]
+  (select-keys state (get-all-process-ids state)))
+
+(defn get-all-local-documents
+  ([state]
+   (apply hash-map
+          (reduce into
+                  []
+                  (s/select [s/ALL (s/collect-one s/FIRST) s/LAST (s/must :last-document)]
+                            (get-all-local-vars state))))))
+
+(defn make-node [state]
+  (if-let [timeline (:timeline state)]
+    (hash timeline)))
+
+(defn make-pid [process-id]
+  (symbol (str "pid=" process-id)))
+
+(defn format-time-slot [[ev {process-id :process-id :as attrs} :as time-slot]]
+  (condp = ev
+    :process (if (< 0 (:amount attrs))
+               [(symbol "+1€") (make-pid process-id)]
+               [(symbol "-1€") (make-pid process-id)])
+    :balance-read [(symbol "BR") (make-pid process-id)]
+    :accounting-read [(symbol "AR") (make-pid process-id)]
+    :accounting-write [(symbol "AW") (make-pid process-id)]
+    :balance-write [(symbol "BW") (make-pid process-id)]
+    time-slot))
+
+(defn make-attrs [state]
+  {:accounting          (merge {(symbol "db") (get-accounting-db state)}
+                               (reduce-kv (fn [result k v]
+                                            (assoc result k (get-accounting-local v)))
+                                          {}
+                                          (get-all-local-documents state)))
+   ;:timeline            (mapv transform-event (:timeline state))
+   :completed-transfers (vec (sort (:processes (:balance state))))
+   :balance             (merge {(symbol "db") (or (:amount (:balance state)) 0)}
+                               (comment reduce-kv (fn [result k v]
+                                                    (assoc result k (get-accounting-local v)))
+                                        {}
+                                        (get-all-local-documents state)))})
+
+(defn hans [graph self state]
+  (prn (make-attrs state))
+  (ugraph/add-nodes-with-attrs graph [self (make-attrs state)]))
+
+(defn make-graph [graph state]
+  (let [self (make-node state)
+        previous-state (first (:history state))]
+    (if-let [predecessor (make-node previous-state)]
+      (-> (make-graph graph previous-state)
+          (ugraph/add-nodes-with-attrs [self (make-attrs state)])
+          (ugraph/add-directed-edges [predecessor self {:event (last (:timeline state))}]))
+      (-> (ugraph/add-nodes-with-attrs graph [self (make-attrs state)])
+          (ugraph/add-directed-edges [START self {:event (last (:timeline state))}])))))
+
+(defn make-state-space
+  ([{:keys [model length keys interpreter universe]}]
+   (let [timelines (timeline/all-timelines-of-length length model)]
+     (reductions make-graph
+                 (ugraph/digraph)
+                 (map (comp interpreter
+                            (fn [timeline]
+                              {:universe universe
+                               :model    model
+                               :timeline timeline}))
+                      timelines)))))
+
+(defn make-timeline-str [{timeline :timeline}]
+  (str "{"
+       (string/join "|" (cons "timeline" timeline))
+       "}"))
+
+(defn format-json [s]
+  (-> (str "\\{"
+           (apply str (rest (drop-last s)))
+           "\\}")
+      (str/replace #"\"" "")))
+
+(defn get-table-dot-str [k v format-f state]
+  (let [ks (mapv first (seq (k state)))
+        vs (mapv (comp format-f
+                       second) (seq (k state)))]
+    (str "{" (name k) "|{process|" (str/join "|" ks) "}|{" v "|" (str/join "|" vs) "}}")))
+
+(defn get-amount-dot-str [state]
+  (str "{amount|" (or (:amount state) 0) "}"))
+
+(defn get-completed-transfers-dot-str [state]
+  (str "{completed transfers|"
+       (str/join "|" (:completed-transfers state))
+       "}"))
+
+(defn make-dot-str [g node]
+  (if (= node START)
+    (str node " [shape=record, label=\"{{accounting|{process|db}|{document|\\{\\}}}|{balance|{process|db}|{amount|0}}|{completed transfers|}}\"];")
+    (let [state (ugraph/attrs g node)
+          label (str \"
+                     "{"
+                     (get-table-dot-str :accounting
+                                        "document"
+                                        (comp format-json
+                                              (fn [x] (json/write-str x)))
+                                        state)
+                     "|"
+                     (get-table-dot-str :balance
+                                        "amount"
+                                        identity
+                                        state)
+                     "|"
+                     (get-completed-transfers-dot-str state)
+                     "}"
+                     \")]
+      (str node " [shape=record, label=" label "];"))))
+
+(defn make-label-dot-str [g [src dest :as edge]]
+  (str src " ->  " dest "[label=\"" (format-time-slot (:event (ugraph/attrs g edge))) "\"];"))
+
+(defn write-dot-file
+  ([g f] (write-dot-file g f {}))
+  ([g f options]
+   (do
+     (spit f "digraph G {\n    edge [label=0];\n    graph [ranksep=0];\n" :append false)
+     (doseq [node (ugraph/nodes g)]
+       (spit f (str (make-dot-str g node) "\n") :append true))
+     (doseq [node (ugraph/edges g)]
+       (spit f (str (make-label-dot-str g node) "\n") :append true))
+     (spit f "}" :append true))))
+

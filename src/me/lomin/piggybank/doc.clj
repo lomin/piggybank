@@ -1,4 +1,6 @@
-(ns me.lomin.piggybank.doc)
+(ns me.lomin.piggybank.doc
+  (:require [clojure.pprint :as pprint]
+            [clojure.repl :as repl]))
 
 (def counter (atom 0))
 
@@ -6,10 +8,10 @@
   (str "listing-" (swap! counter inc)))
 
 (defmacro print-source [x]
-  `(do (clojure.pprint/with-pprint-dispatch
-         clojure.pprint/code-dispatch
-         (clojure.pprint/pprint
-          (clojure.edn/read-string (with-out-str (clojure.repl/source ~x)))))
+  `(do (pprint/with-pprint-dispatch
+         pprint/code-dispatch
+         (pprint/pprint
+          (clojure.edn/read-string (with-out-str (repl/source ~x)))))
        (return-listing)))
 
 (defn print-check [chk]
