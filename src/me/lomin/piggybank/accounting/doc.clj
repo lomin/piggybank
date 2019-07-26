@@ -195,9 +195,12 @@
                   (s/select [s/ALL (s/collect-one s/FIRST) s/LAST (s/must :last-document)]
                             (get-all-local-vars state))))))
 
+(def my-hash (let [state (atom 0)]
+               (memoize (fn [_] (swap! state inc)))))
+
 (defn make-node [state]
   (if-let [timeline (:timeline state)]
-    (hash timeline)))
+    (my-hash timeline)))
 
 (defn make-pid [process-id]
   (symbol (str "pid=" process-id)))

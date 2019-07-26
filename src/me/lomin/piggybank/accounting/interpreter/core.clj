@@ -21,7 +21,8 @@
 
 (defn check-negative-balance [state {value :amount :as data}]
   (if (neg? (+ value (get-local-variable state data :balance)))
-    (set-local-variable state data :check-failed true)
+    (-> (set-local-variable state data :check-failed true)
+        (assoc :invalid-timeline true))
     state))
 
 (defn db-read [state data]
