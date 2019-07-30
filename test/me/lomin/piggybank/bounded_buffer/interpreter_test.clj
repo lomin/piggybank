@@ -11,19 +11,19 @@
   (intp/interpret-timeline universe timeline model/simple-bounded-buffer-model))
 
 (deftest ^:unit interpret-producer-test
-  (is (= {:buffer      [:X nil nil nil]
-          :check-count 1
-          :history     '({:buffer   [nil nil nil nil]
-                          :occupied 0
-                          :put-at   0
-                          :take-at  0
-                          :threads  {}})
-          :occupied    1
-          :put-at      1
-          :take-at     0
-          :threads     {}}
-         (interpret-timeline spec/empty-universe
-                             [[:producer {:id 0 :notify 0}]])))
+  (is (=* {:buffer      [:X nil nil nil]
+           :check-count 1
+           :history     '({:buffer   [nil nil nil nil]
+                           :occupied 0
+                           :put-at   0
+                           :take-at  0
+                           :threads  {}})
+           :occupied    1
+           :put-at      1
+           :take-at     0
+           :threads     {}}
+          (interpret-timeline spec/empty-universe
+                              [[:producer {:id 0 :notify 0}]])))
 
   (testing "do nothing if I'm sleeping"
     (let [universe (update spec/empty-universe :threads assoc 0 :sleeping)]
@@ -62,19 +62,19 @@
                                  [:producer {:id 4 :notify 4}]])))))
 
 (deftest ^:unit interpret-consumer-test
-  (is (= {:buffer      [nil nil nil nil]
-          :check-count 1
-          :history     [{:buffer   [nil nil nil nil]
-                         :occupied 0
-                         :put-at   0
-                         :take-at  0
-                         :threads  {}}]
-          :occupied    0
-          :put-at      0
-          :take-at     0
-          :threads     {0 :sleeping}}
-         (interpret-timeline spec/empty-universe
-                             [[:consumer {:id 0 :notify 0}]])))
+  (is (=* {:buffer      [nil nil nil nil]
+           :check-count 1
+           :history     [{:buffer   [nil nil nil nil]
+                          :occupied 0
+                          :put-at   0
+                          :take-at  0
+                          :threads  {}}]
+           :occupied    0
+           :put-at      0
+           :take-at     0
+           :threads     {0 :sleeping}}
+          (interpret-timeline spec/empty-universe
+                              [[:consumer {:id 0 :notify 0}]])))
 
   (testing "do nothing if I'm sleeping"
     (let [universe (update spec/empty-universe :threads assoc 0 :sleeping)]

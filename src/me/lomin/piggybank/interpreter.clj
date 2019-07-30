@@ -26,7 +26,7 @@
                                          (add-previous-state universe*)
                                          (update :timeline add event))]
               (if (:invalid-timeline successor-universe)
-                (inc-check-count (assoc universe* :invalid-timeline true) progress-bar)
+                (reduced (inc-check-count successor-universe progress-bar))
                 (check-properties successor-universe
                                   (assoc context :event event)))))
           universe

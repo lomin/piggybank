@@ -126,7 +126,7 @@
 
 (deftest ^:unit bounded-buffer-model-retest
   (is (=  {:buffer [:X]
-           :check-count 3751
+           :check-count 3055
            :max-check-count 1959552
            :occupied 0
            :property-violated {:name :there-must-be-no-deadlocks

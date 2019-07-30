@@ -18,19 +18,23 @@
                                               multi-threaded
                                               then]]
             [me.lomin.piggybank.timeline :as timeline]
+            [ubergraph.alg :as ualg]
             [ubergraph.core :as ugraph]))
 
-(def START "start")
+(def ROOT "start")
 
 (defn check
   ([model length]
    (check model length nil))
   ([model length keys]
+   (check model length keys nil))
+  ([model length keys prelines]
    (checker/check {:model       model
                    :length      length
                    :keys        keys
                    :interpreter intp/interpret-timeline
                    :universe    spec/empty-universe
+                   :prelines    prelines
                    :partitions  5})))
 
 (def check* (memoize check))
@@ -61,10 +65,10 @@
 
 (defn universe-after-update []
   (print-data
-    (let [[_ {:keys [amount process-id]}] event-0*]
-      (-> universe-0*
-          (update-in [:accounting :transfers] #(assoc % process-id amount))
-          (update-in [:balance :amount] #(+ % amount))))))
+   (let [[_ {:keys [amount process-id]}] event-0*]
+     (-> universe-0*
+         (update-in [:accounting :transfers] #(assoc % process-id amount))
+         (update-in [:balance :amount] #(+ % amount))))))
 
 (defn example-timeline-0 []
   (print-data (first (seq (timeline/all-timelines-of-length 3 model/example-model-0)))))
@@ -216,19 +220,29 @@
     :balance-write [(symbol "BW") (make-pid process-id)]
     time-slot))
 
+(defn assoc-some [m k v]
+  (if v (assoc m k v) m))
+
 (defn make-attrs [state]
-  {:accounting          (merge {(symbol "db") (get-accounting-db state)}
-                               (reduce-kv (fn [result k v]
-                                            (assoc result k (get-accounting-local v)))
-                                          {}
-                                          (get-all-local-documents state)))
-   ;:timeline            (mapv transform-event (:timeline state))
-   :completed-transfers (vec (sort (:processes (:balance state))))
-   :balance             (merge {(symbol "db") (or (:amount (:balance state)) 0)}
-                               (reduce-kv (fn [result k v]
-                                            (assoc result k (:balance v)))
-                                          {}
-                                          (get-all-local-vars state)))})
+  (-> {:accounting          (merge {(symbol "db") (get-accounting-db state)}
+                                   (reduce-kv (fn [result k v]
+                                                (assoc result k (get-accounting-local v)))
+                                              {}
+                                              (get-all-local-documents state)))
+       :completed-transfers (vec (sort (:processes (:balance state))))
+       :timeline            (:timeline state)
+       :balance             (merge {(symbol "db") (or (:amount (:balance state)) 0)}
+                                   (reduce-kv (fn [result k v]
+                                                (assoc result k (:balance v)))
+                                              {}
+                                              (get-all-local-vars state)))}
+      (assoc-some :property-violated (:property-violated state))
+      (assoc-some :invalid-timeline (:invalid-timeline state))))
+
+(defn check-property-violated [graph state]
+  (if (:property-violated state)
+    (reduced graph)
+    graph))
 
 (defn make-graph [graph state]
   (let [self (make-node state)
@@ -236,21 +250,53 @@
     (if-let [predecessor (make-node previous-state)]
       (-> (make-graph graph previous-state)
           (ugraph/add-nodes-with-attrs [self (make-attrs state)])
-          (ugraph/add-directed-edges [predecessor self {:event (last (:timeline state))}]))
+          (ugraph/add-directed-edges [predecessor self {:event (last (:timeline state))}])
+          (check-property-violated state))
       (-> (ugraph/add-nodes-with-attrs graph [self (make-attrs state)])
-          (ugraph/add-directed-edges [START self {:event (last (:timeline state))}])))))
+          (ugraph/add-directed-edges [ROOT self {:event (last (:timeline state))}])
+          (check-property-violated state)))))
 
 (defn make-state-space
-  ([{:keys [model length keys interpreter universe]}]
-   (let [timelines (timeline/all-timelines-of-length length model)]
+  ([{:keys [model length keys interpreter universe prelines]}]
+   (let [prelines (vec (or (seq prelines) []))
+         timelines (timeline/all-timelines-of-length length model)]
      (reductions make-graph
                  (ugraph/digraph)
                  (map (comp interpreter
                             (fn [timeline]
                               {:universe universe
                                :model    model
-                               :timeline timeline}))
+                               :timeline (into prelines timeline)}))
                       timelines)))))
+
+(defn not-leaf? [g node]
+  (seq (ugraph/find-edges g {:src node})))
+
+(defn find-all-leafs [g]
+  (remove (partial not-leaf? g) (ugraph/nodes g)))
+
+(defn property-violated-node? [g node]
+  false)
+
+(defn find-node
+  ([g query]
+   (first (filter #(query (ugraph/attrs g %))
+                  (find-all-leafs g)))))
+
+(defn find-path [g query]
+  (if-let [node (find-node g query)]
+    (ualg/nodes-in-path
+     (ualg/shortest-path g
+                         ROOT
+                         node))))
+
+(defn remove-all-nodes [g nodes]
+  (let [nodes-set (set nodes)]
+    (reduce (fn [g* n] (if (nodes-set n)
+                         g*
+                         (ugraph/remove-nodes g* n)))
+            g
+            (ugraph/nodes g))))
 
 (defn make-timeline-str [{timeline :timeline}]
   (str "{"
@@ -278,7 +324,7 @@
        "}"))
 
 (defn make-dot-str [g node]
-  (if (= node START)
+  (if (= node ROOT)
     (str node " [shape=record, label=\"{{accounting|{process|db}|{document|\\{\\}}}|{balance|{process|db}|{amount|0}}|{completed transfers|}}\"];")
     (let [state (ugraph/attrs g node)
           label (str \"

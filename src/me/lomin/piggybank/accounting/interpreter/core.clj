@@ -60,9 +60,9 @@
 (defn db-gc-link-to-new-branch [state data]
   (db/insert-branch-in-meta state (db/make-branch-init-link data)))
 
-(defn restart [state {:keys [past]}]
-  (let [past-state (if (and (:history state) (< 0 past))
-                     (nth (:history state) (dec past))
+(defn restart [state {:keys [go-steps-back-in-timeline]}]
+  (let [past-state (if (and (:history state) (< 0 go-steps-back-in-timeline))
+                     (nth (:history state) (dec go-steps-back-in-timeline))
                      state)
         documents (accounting/follow-next-links past-state)
         ids (into #{} props/get-event-ids documents)
@@ -80,7 +80,7 @@
 (defn balance-read [state data]
   (check-negative-balance (read+save-balance state data) data))
 
-(defn interpret-event [state [event-type data]]
+(defn interpret-event [state [event-type data :as x]]
   (if (check-failed? state data)
     state
     (condp = event-type

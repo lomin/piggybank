@@ -4,6 +4,7 @@
             [me.lomin.piggybank.model :refer [all
                                               always
                                               choose
+                                              continue
                                               generate-incoming
                                               make-model
                                               multi-threaded
@@ -20,25 +21,45 @@
 (defn successor-timelines [model timeline]
   (timeline/successor-timelines [model timeline]))
 
+(def simple-model
+  (make-model
+   {START             (all (generate-incoming multi-threaded
+                                              [:process {:amount 1}]
+                                              [:process {:amount -1}]))
+    :process          (all (then :accounting-read))
+    :accounting-read  (all (then :accounting-write))
+    :accounting-write (all (then :balance-write))
+    :balance-write    (continue)}))
+
+(def simple-single-model
+  (make-model
+   {START             (all (generate-incoming model/single-threaded
+                                              [:process {:amount 1}]
+                                              [:process {:amount -1}]))
+    :process          (all (then :accounting-read))
+    :accounting-read  (all (then :accounting-write))
+    :accounting-write (all (then :balance-write))
+    :balance-write    (continue)}))
+
 (deftest ^:unit multi-threaded-timeline-test
   (is (= 13932
-         (count (timeline/all-timelines-of-length 7 model/multi-threaded-simple-model))))
+         (count (timeline/all-timelines-of-length 7 simple-model))))
   (is (= #{[[:process {:process-id 0, :amount 1}]]
            [[:process {:process-id 0, :amount -1}]]}
-         (successor-timelines model/multi-threaded-simple-model
+         (successor-timelines simple-model
                               [])))
 
-  (is (= #{[[:process {:amount 1, :process-id 0}]
-            [:accounting-read {:amount 1, :process-id 0}]
-            [:accounting-write {:amount 1, :process-id 0}]]
-           [[:process {:amount 1, :process-id 0}]
-            [:accounting-read {:amount 1, :process-id 0}]
-            [:process {:amount -1, :process-id 1}]]
-           [[:process {:amount 1, :process-id 0}]
-            [:accounting-read {:amount 1, :process-id 0}]
-            [:process {:amount 1, :process-id 1}]]}
-         (successor-timelines model/multi-threaded-simple-model
-                              [[:process {:process-id 0 :amount 1}] [:accounting-read {:process-id 0 :amount 1}]]))))
+  (is (=    #{[[:process {:amount 1, :process-id 0}]
+               [:accounting-read {:amount 1, :process-id 0}]
+               [:accounting-write {:amount 1, :process-id 0}]]
+              [[:process {:amount 1, :process-id 0}]
+               [:accounting-read {:amount 1, :process-id 0}]
+               [:process {:amount -1, :process-id 1}]]
+              [[:process {:amount 1, :process-id 0}]
+               [:accounting-read {:amount 1, :process-id 0}]
+               [:process {:amount 1, :process-id 1}]]}
+            (successor-timelines simple-model
+                                 [[:process {:process-id 0 :amount 1}] [:accounting-read {:process-id 0 :amount 1}]]))))
 
 (deftest ^:unit make-all-timeline-test
   (is (= #{[[:process {:amount -1, :process-id 0}]
@@ -50,7 +71,7 @@
             [:accounting-read {:amount 1, :process-id 0}]]
            [[:process {:amount 1, :process-id 0}] [:process {:amount -1, :process-id 1}]]
            [[:process {:amount 1, :process-id 0}] [:process {:amount 1, :process-id 1}]]}
-         (nth (timeline/infinite-timelines-seq model/multi-threaded-simple-model
+         (nth (timeline/infinite-timelines-seq simple-model
                                                timeline/EMPTY-TIMELINES)
               2))))
 
@@ -62,19 +83,19 @@
 
 (deftest ^:unit single-threaded-timeline-test
   (is (= 8
-         (count (timeline/all-timelines-of-length 10 model/single-threaded-simple-model))))
+         (count (timeline/all-timelines-of-length 10 simple-single-model))))
 
   (is (= #{[[:process {:process-id 0, :amount 1}]]
            [[:process {:process-id 0, :amount -1}]]}
-         (successor-timelines model/single-threaded-simple-model
+         (successor-timelines simple-model
                               [])))
 
   (is (= #{[[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}]]}
-         (successor-timelines model/single-threaded-simple-model
+         (successor-timelines simple-single-model
                               [[:process {:process-id 0 :amount 1}]])))
 
   (is (= #{[[:process {:process-id 0, :amount 1}] [:accounting-read {:process-id 0, :amount 1}] [:accounting-write {:process-id 0, :amount 1}]]}
-         (successor-timelines model/single-threaded-simple-model
+         (successor-timelines simple-single-model
                               [[:process {:process-id 0 :amount 1}] [:accounting-read {:process-id 0 :amount 1}]]))))
 
 (deftest ^:unit pagination-test
@@ -84,21 +105,24 @@
   (is (= 7
          (count (timeline/all-timelines-of-length 2 model/single-threaded+pagination-model))))
 
-  (is (= 19
+  (is (= 15
          (count (timeline/all-timelines-of-length 3 model/single-threaded+pagination-model)))))
 
 (deftest ^:unit timeline-dependent-of-past-test
   (is (= #{[[:process {:amount 1, :process-id 0}]
             [:balance-write {:amount 1, :process-id 0}]
-            [:restart {:past 0}]]
+            [:process {:amount 1, :process-id 1}]]
            [[:process {:amount 1, :process-id 0}]
             [:balance-write {:amount 1, :process-id 0}]
-            [:restart {:past 1}]]
+            [:restart {:go-steps-back-in-timeline 0, :process-id 0}]]
            [[:process {:amount 1, :process-id 0}]
             [:balance-write {:amount 1, :process-id 0}]
-            [:restart {:past 2}]]
+            [:restart {:go-steps-back-in-timeline 1, :process-id 0}]]
            [[:process {:amount 1, :process-id 0}]
-            [:balance-write {:amount 1, :process-id 0}]
+            [:restart {:go-steps-back-in-timeline 0, :process-id 0}]
+            [:process {:amount 1, :process-id 1}]]
+           [[:process {:amount 1, :process-id 0}]
+            [:restart {:go-steps-back-in-timeline 1, :process-id 0}]
             [:process {:amount 1, :process-id 1}]]}
          (timeline/all-timelines-of-length 3
                                            (partial make-model
