@@ -209,6 +209,9 @@
 (defn make-pid [process-id]
   (symbol (str "pid=" process-id)))
 
+(defn format-reset [[_ {steps :go-steps-back-in-timeline} :as time-slot]]
+  [(symbol (str "RW" steps))])
+
 (defn format-time-slot [[ev {process-id :process-id :as attrs} :as time-slot]]
   (condp = ev
     :process (if (< 0 (:amount attrs))
@@ -218,6 +221,8 @@
     :accounting-read [(symbol "AR") (make-pid process-id)]
     :accounting-write [(symbol "AW") (make-pid process-id)]
     :balance-write [(symbol "BW") (make-pid process-id)]
+    :accounting-read-last-write [(symbol "ALWR") (make-pid process-id)]
+    :restart (format-reset time-slot)
     time-slot))
 
 (defn assoc-some [m k v]
@@ -259,14 +264,14 @@
 (defn make-state-space
   ([{:keys [model length keys interpreter universe prelines]}]
    (let [prelines (vec (or (seq prelines) []))
-         timelines (timeline/all-timelines-of-length length model)]
+         timelines (timeline/all-timelines-of-length length model #{prelines})]
      (reductions make-graph
                  (ugraph/digraph)
                  (map (comp interpreter
                             (fn [timeline]
                               {:universe universe
                                :model    model
-                               :timeline (into prelines timeline)}))
+                               :timeline timeline}))
                       timelines)))))
 
 (defn not-leaf? [g node]
@@ -359,3 +364,39 @@
        (spit f (str (make-label-dot-str g node) "\n") :append true))
      (spit f "}" :append true))))
 
+(defn multi-state-space []
+  (make-state-space {:model       model/multi-threaded-simple-model
+                     :length      9
+                     :keys        keys
+                     :interpreter intp/interpret-timeline
+                     :universe    spec/empty-universe
+                     :partitions  5}))
+
+(defn restart-state-space []
+  (make-state-space {:model       model/single-threaded+inmemory-balance+eventually-consistent-accounting-model
+                     :length      9
+                     :keys        keys
+                     :interpreter intp/interpret-timeline
+                     :universe    spec/empty-universe
+                     :partitions  5
+                     :prelines    [[:process {:amount 1, :process-id 0}]
+                                   [:balance-read {:amount 1, :process-id 0}]
+                                   [:accounting-read {:amount 1, :process-id 0}]
+                                   [:accounting-write {:amount 1, :process-id 0}]
+                                   [:accounting-read-last-write {:amount 1, :process-id 0}]
+                                   [:balance-write {:amount 1, :process-id 0}]]}))
+
+(defn multi-state-space-graph [] (last (multi-state-space)))
+(defn restart-state-space-graph [] (last (restart-state-space)))
+
+(defn get-bad-state [g]
+  (let [format-events (fn [events]
+                        (mapv (comp (partial str/join " ")
+                                    format-time-slot) events))
+        node (ugraph/attrs g (last (find-path g :property-violated)))]
+    (-> node
+        (update :timeline format-events)
+        (assoc :property-violated (get-in node [:property-violated :name])))))
+
+(defn write-bad-state [g]
+  (spit "/tmp/bad-state.json" (clojure.data.json/write-str (get-bad-state g))))

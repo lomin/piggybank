@@ -64,7 +64,11 @@
                 start-timelines))
 
 (sdefn all-timelines-of-length {:ret ::timeline-set}
-       [[length :- int?]
-        [model :- ::model]]
-       (nth (infinite-timelines-seq model EMPTY-TIMELINES)
-            length))
+       ([[length :- int?]
+         [model :- ::model]]
+        (all-timelines-of-length length model EMPTY-TIMELINES))
+       ([[length :- int?]
+         [model :- ::model]
+         [init-timelines :- ::timeline-set]]
+        (nth (infinite-timelines-seq model init-timelines)
+             length)))

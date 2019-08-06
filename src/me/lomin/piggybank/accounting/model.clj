@@ -25,11 +25,16 @@
                         (inc))))
   (range 2))
 
+(defn find-restartable-process-id [timeline]
+  (there-exists [[_ {pid :process-id}] (model/find-events timeline :process)]
+                (and (for-all [[_ {restart-pid :process-id}] (model/find-events timeline :restart)]
+                              (not= pid restart-pid))
+                     (not (there-exists [[_ {finished-pid :process-id}] (model/find-events timeline :process)]
+                                        (< pid finished-pid)))
+                     pid)))
+
 (defn- make-event-candidates-for-every-past-time-slot [event-types {timeline :timeline}]
-  (let [result-pid (there-exists [[_ {pid :process-id}] (model/find-events timeline :process)]
-                                 (and (for-all [[_ {restart-pid :process-id}] (model/find-events timeline :restart)]
-                                               (not= pid restart-pid))
-                                      pid))]
+  (let [result-pid (find-restartable-process-id timeline)]
     (set (map (fn [[event i]] [event {:go-steps-back-in-timeline i :process-id result-pid}])
               (combo/cartesian-product event-types
                                        (n-back-in-time nil timeline))))))

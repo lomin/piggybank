@@ -59,7 +59,7 @@
                         choose-timelines))))))
 
 (deftest ^:slow-model multi-threaded-model-test
-  (is (= {:property-violated {:name     :there-must-be-no-lost-updates}}
+  (is (= {:property-violated {:name :there-must-be-no-lost-updates}}
          (check model/multi-threaded-simple-model 9 [:check-count :property-violated :accounting :max-check-count :balance]))))
 
 (deftest ^:slow-model single-threaded-model-test
@@ -67,7 +67,7 @@
          (check model/single-threaded-simple-model 31 [:check-count :max-check-count :property-violated]))))
 
 (deftest ^:slow-model single-threaded+pagination-model-test
-  (is (=* {:property-violated {:name     :all-links-must-point-to-an-existing-document}}
+  (is (=* {:property-violated {:name :all-links-must-point-to-an-existing-document}}
           (check model/single-threaded+pagination-model 10 [:check-count :property-violated :accounting]))))
 
 (deftest ^:slow-model single-threaded+safe-pagination-model-test
@@ -77,7 +77,7 @@
 (deftest ^:slow-model single-threaded+safe-pagination+gc-model-test
   (testing "proves that the garbage collection algorithm is flawed"
     (is (= {:check-count       15509
-            :property-violated {:name     :there-must-be-no-lost-updates}}
+            :property-violated {:name :there-must-be-no-lost-updates}}
            (check model/model+safe-pagination+gc-strict 12 [:check-count :property-violated :accounting])))))
 
 (deftest ^:model single-threaded-inmemory-db-model-test
@@ -85,13 +85,13 @@
             [:balance-read {:amount 1, :process-id 0}]
             [:accounting-read {:amount 1, :process-id 0}]
             [:accounting-write {:amount 1, :process-id 0}]
-            [:accounting-last-write-read {:amount 1, :process-id 0}]
+            [:accounting-read-last-write {:amount 1, :process-id 0}]
             [:balance-write {:amount 1, :process-id 0}]
             [:process {:amount -1, :process-id 1}]
             [:balance-read {:amount -1, :process-id 1}]
             [:accounting-read {:amount -1, :process-id 1}]
             [:accounting-write {:amount -1, :process-id 1}]
-            [:accounting-last-write-read {:amount -1, :process-id 1}]
+            [:accounting-read-last-write {:amount -1, :process-id 1}]
             [:restart {:go-steps-back-in-timeline 1}]
             [:process {:amount -1, :process-id 2}]
             [:balance-read {:amount -1, :process-id 2}]
@@ -103,35 +103,35 @@
            (timeline/all-timelines-of-length 16 model/single-threaded+inmemory-balance+eventually-consistent-accounting-model))
   (is (= 14
          (count (timeline/all-timelines-of-length 3 model/single-threaded+inmemory-balance+eventually-consistent-accounting-model))))
-  (is (= {:check-count       18921
-          :max-check-count   36900
-          :property-violated {:name     :accounting-balance-must-always-be>=0
-                              :timeline [[:process {:amount 1, :process-id -1}]
-                                         [:balance-read {:amount 1, :process-id -1}]
-                                         [:accounting-read {:amount 1, :process-id -1}]
-                                         [:accounting-write {:amount 1, :process-id -1}]
-                                         [:accounting-last-write-read
-                                          {:amount 1, :process-id -1}]
-                                         [:balance-write {:amount 1, :process-id -1}]
-                                         [:process {:amount -1, :process-id 0}]
-                                         [:balance-read {:amount -1, :process-id 0}]
-                                         [:accounting-read {:amount -1, :process-id 0}]
-                                         [:accounting-write {:amount -1, :process-id 0}]
-                                         [:restart
-                                          {:go-steps-back-in-timeline 1, :process-id 0}]
-                                         [:process {:amount -1, :process-id 1}]
-                                         [:balance-read {:amount -1, :process-id 1}]
-                                         [:accounting-read {:amount -1, :process-id 1}]
-                                         [:accounting-write {:amount -1, :process-id 1}]]}}
+  (is (= {:check-count 29169
+          :property-violated
+          {:name :accounting-balance-must-always-be>=0
+           :timeline
+           [[:process {:amount 1, :process-id 0}]
+            [:balance-read {:amount 1, :process-id 0}]
+            [:accounting-read {:amount 1, :process-id 0}]
+            [:accounting-write {:amount 1, :process-id 0}]
+            [:accounting-read-last-write {:amount 1, :process-id 0}]
+            [:balance-write {:amount 1, :process-id 0}]
+            [:process {:amount -1, :process-id 1}]
+            [:balance-read {:amount -1, :process-id 1}]
+            [:accounting-read {:amount -1, :process-id 1}]
+            [:accounting-write {:amount -1, :process-id 1}]
+            [:restart {:go-steps-back-in-timeline 1, :process-id 1}]
+            [:process {:amount -1, :process-id 2}]
+            [:balance-read {:amount -1, :process-id 2}]
+            [:accounting-read {:amount -1, :process-id 2}]
+            [:accounting-write {:amount -1, :process-id 2}]]}
+          :max-check-count 110100}
          (check model/single-threaded+inmemory-balance+eventually-consistent-accounting-model
                 9
                 [:check-count :property-violated :max-check-count]
-                [[:process {:amount 1, :process-id -1}]
-                 [:balance-read {:amount 1, :process-id -1}]
-                 [:accounting-read {:amount 1, :process-id -1}]
-                 [:accounting-write {:amount 1, :process-id -1}]
-                 [:accounting-last-write-read {:amount 1, :process-id -1}]
-                 [:balance-write {:amount 1, :process-id -1}]]))))
+                [[:process {:amount 1, :process-id 0}]
+                 [:balance-read {:amount 1, :process-id 0}]
+                 [:accounting-read {:amount 1, :process-id 0}]
+                 [:accounting-write {:amount 1, :process-id 0}]
+                 [:accounting-read-last-write {:amount 1, :process-id 0}]
+                 [:balance-write {:amount 1, :process-id 0}]]))))
 
 {:check-count     34378
  :max-check-count 36900
@@ -141,7 +141,7 @@
              [:balance-read {:amount 1, :process-id 0}]
              [:accounting-read {:amount 1, :process-id 0}]
              [:accounting-write {:amount 1, :process-id 0}]
-             [:accounting-last-write-read
+             [:accounting-read-last-write
               {:amount 1, :process-id 0}]
              [:balance-write {:amount 1, :process-id 0}]
              [:process {:amount -1, :process-id 0}]

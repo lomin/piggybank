@@ -18,9 +18,9 @@
 
 (defn check
   ([{:keys [model length keys interpreter universe partitions prelines]}]
-   (let [timelines (timeline/all-timelines-of-length length model)
-         prelines (vec (or (seq prelines) []))
-         max-check-count (* length (count timelines))
+   (let [prelines (vec (or (seq prelines) []))
+         timelines (timeline/all-timelines-of-length length model #{prelines})
+         max-check-count (* (+ length (count prelines)) (count timelines))
          progress-bar (pgb/make-fuzzy-progress-bar {:max        max-check-count
                                                     :partitions partitions})
          result (-> (r/fold (check-properties universe)
@@ -29,7 +29,7 @@
                                            {:progress-bar progress-bar
                                             :universe     universe
                                             :model        model
-                                            :timeline     (into prelines timeline)}))
+                                            :timeline     timeline}))
                                    timelines))
                     (assoc :max-check-count max-check-count))]
      (if keys
