@@ -8,7 +8,7 @@
             [me.lomin.piggybank.accounting.interpreter.spec :as spec]
             [me.lomin.piggybank.accounting.model :as model]
             [me.lomin.piggybank.checker :as checker]
-            [me.lomin.piggybank.doc :refer [print-check print-data print-source]]
+            [me.lomin.piggybank.doc :refer [print-check print-data print-source] :as doc]
             [me.lomin.piggybank.model :refer [all
                                               always
                                               choose
@@ -20,8 +20,6 @@
             [me.lomin.piggybank.timeline :as timeline]
             [ubergraph.alg :as ualg]
             [ubergraph.core :as ugraph]))
-
-(def ROOT "start")
 
 (defn check
   ([model length]
@@ -199,13 +197,6 @@
                   (s/select [s/ALL (s/collect-one s/FIRST) s/LAST (s/must :last-document)]
                             (get-all-local-vars state))))))
 
-(def my-hash (let [state (atom 0)]
-               (memoize (fn [_] (swap! state inc)))))
-
-(defn make-node [state]
-  (if-let [timeline (:timeline state)]
-    (my-hash timeline)))
-
 (defn make-pid [process-id]
   (symbol (str "pid=" process-id)))
 
@@ -244,70 +235,6 @@
       (assoc-some :property-violated (:property-violated state))
       (assoc-some :invalid-timeline (:invalid-timeline state))))
 
-(defn check-property-violated [graph state]
-  (if (:property-violated state)
-    (reduced graph)
-    graph))
-
-(defn make-graph [graph state]
-  (let [self (make-node state)
-        previous-state (first (:history state))]
-    (if-let [predecessor (make-node previous-state)]
-      (-> (make-graph graph previous-state)
-          (ugraph/add-nodes-with-attrs [self (make-attrs state)])
-          (ugraph/add-directed-edges [predecessor self {:event (last (:timeline state))}])
-          (check-property-violated state))
-      (-> (ugraph/add-nodes-with-attrs graph [self (make-attrs state)])
-          (ugraph/add-directed-edges [ROOT self {:event (last (:timeline state))}])
-          (check-property-violated state)))))
-
-(defn make-state-space
-  ([{:keys [model length keys interpreter universe prelines]}]
-   (let [prelines (vec (or (seq prelines) []))
-         timelines (timeline/all-timelines-of-length length model #{prelines})]
-     (reductions make-graph
-                 (ugraph/digraph)
-                 (map (comp interpreter
-                            (fn [timeline]
-                              {:universe universe
-                               :model    model
-                               :timeline timeline}))
-                      timelines)))))
-
-(defn not-leaf? [g node]
-  (seq (ugraph/find-edges g {:src node})))
-
-(defn find-all-leafs [g]
-  (remove (partial not-leaf? g) (ugraph/nodes g)))
-
-(defn property-violated-node? [g node]
-  false)
-
-(defn find-node
-  ([g query]
-   (first (filter #(query (ugraph/attrs g %))
-                  (find-all-leafs g)))))
-
-(defn find-path [g query]
-  (if-let [node (find-node g query)]
-    (ualg/nodes-in-path
-     (ualg/shortest-path g
-                         ROOT
-                         node))))
-
-(defn remove-all-nodes [g nodes]
-  (let [nodes-set (set nodes)]
-    (reduce (fn [g* n] (if (nodes-set n)
-                         g*
-                         (ugraph/remove-nodes g* n)))
-            g
-            (ugraph/nodes g))))
-
-(defn make-timeline-str [{timeline :timeline}]
-  (str "{"
-       (string/join "|" (cons "timeline" timeline))
-       "}"))
-
 (defn format-json [s]
   (-> (str "\\{"
            (apply str (rest (drop-last s)))
@@ -320,16 +247,13 @@
                        second) (seq (k state)))]
     (str "{" (name k) "|{process|" (str/join "|" ks) "}|{" v "|" (str/join "|" vs) "}}")))
 
-(defn get-amount-dot-str [state]
-  (str "{amount|" (or (:amount state) 0) "}"))
-
 (defn get-completed-transfers-dot-str [state]
   (str "{completed transfers|"
        (str/join "|" (:completed-transfers state))
        "}"))
 
 (defn make-dot-str [g node]
-  (if (= node ROOT)
+  (if (= node doc/ROOT)
     (str node " [shape=record, label=\"{{accounting|{process|db}|{document|\\{\\}}}|{balance|{process|db}|{amount|0}}|{completed transfers|}}\"];")
     (let [state (ugraph/attrs g node)
           label (str \"
@@ -354,37 +278,32 @@
   (str src " ->  " dest "[label=\"" (format-time-slot (:event (ugraph/attrs g edge))) "\"];"))
 
 (defn write-dot-file
-  ([g f] (write-dot-file g f {}))
-  ([g f options]
-   (do
-     (spit f "digraph G {\n    edge [label=0];\n    graph [ranksep=0];\n" :append false)
-     (doseq [node (ugraph/nodes g)]
-       (spit f (str (make-dot-str g node) "\n") :append true))
-     (doseq [node (ugraph/edges g)]
-       (spit f (str (make-label-dot-str g node) "\n") :append true))
-     (spit f "}" :append true))))
+  ([g f] (doc/write-dot-file g f {:make-dot-str       make-dot-str
+                                  :make-label-dot-str make-label-dot-str})))
 
 (defn multi-state-space []
-  (make-state-space {:model       model/multi-threaded-simple-model
-                     :length      9
-                     :keys        keys
-                     :interpreter intp/interpret-timeline
-                     :universe    spec/empty-universe
-                     :partitions  5}))
+  (doc/make-state-space {:model       model/multi-threaded-simple-model
+                         :length      9
+                         :keys        keys
+                         :interpreter intp/interpret-timeline
+                         :universe    spec/empty-universe
+                         :partitions  5
+                         :make-attrs  make-attrs}))
 
 (defn restart-state-space []
-  (make-state-space {:model       model/single-threaded+inmemory-balance+eventually-consistent-accounting-model
-                     :length      9
-                     :keys        keys
-                     :interpreter intp/interpret-timeline
-                     :universe    spec/empty-universe
-                     :partitions  5
-                     :prelines    [[:process {:amount 1, :process-id 0}]
-                                   [:balance-read {:amount 1, :process-id 0}]
-                                   [:accounting-read {:amount 1, :process-id 0}]
-                                   [:accounting-write {:amount 1, :process-id 0}]
-                                   [:accounting-read-last-write {:amount 1, :process-id 0}]
-                                   [:balance-write {:amount 1, :process-id 0}]]}))
+  (doc/make-state-space {:model       model/single-threaded+inmemory-balance+eventually-consistent-accounting-model
+                         :length      9
+                         :keys        keys
+                         :interpreter intp/interpret-timeline
+                         :universe    spec/empty-universe
+                         :partitions  5
+                         :prelines    [[:process {:amount 1, :process-id 0}]
+                                       [:balance-read {:amount 1, :process-id 0}]
+                                       [:accounting-read {:amount 1, :process-id 0}]
+                                       [:accounting-write {:amount 1, :process-id 0}]
+                                       [:accounting-read-last-write {:amount 1, :process-id 0}]
+                                       [:balance-write {:amount 1, :process-id 0}]]
+                         :make-attrs make-attrs}))
 
 (defn multi-state-space-graph [] (last (multi-state-space)))
 (defn restart-state-space-graph [] (last (restart-state-space)))
@@ -393,7 +312,7 @@
   (let [format-events (fn [events]
                         (mapv (comp (partial str/join " ")
                                     format-time-slot) events))
-        node (ugraph/attrs g (last (find-path g :property-violated)))]
+        node (ugraph/attrs g (last (doc/find-path g :property-violated)))]
     (-> node
         (update :timeline format-events)
         (assoc :property-violated (get-in node [:property-violated :name])))))
