@@ -48,7 +48,7 @@
                                    {:amount 1, :process-id 0}]
                                   [:balance-write {:amount 1, :process-id 0}]]}})
 
-(deftest make-state-space-test
+(deftest ^:unit make-state-space-test
   (let [state-space (doc/make-state-space {:model       model/single-threaded-simple-model
                                            :length      5
                                            :keys        keys
@@ -134,23 +134,23 @@
                                                         [:consumer {:id 1}]
                                                         [:producer {:id 2}]])}))))
 
-(deftest ^:focus buffer-doc-test
+(deftest ^:unit buffer-doc-test
   (let [g (make-two-producers-graph 2)]
     (is (=* {:buffer   "empty"
-            :occupied 0
-            :put-at   0
-            :take-at  0
-            :threads
-            {0 [:consumer "sleeping"]
-             1 [:producer "awake"]
-             2 [:producer "awake"]}}
-           (ugraph/attrs g (doc/find-node g #(and (= "empty" (:buffer %)))))))
+             :occupied 0
+             :put-at   0
+             :take-at  0
+             :threads
+             {0 [:consumer "sleeping"]
+              1 [:producer "awake"]
+              2 [:producer "awake"]}}
+            (ugraph/attrs g (doc/find-node g #(and (= "empty" (:buffer %)))))))
     (is (=* {:buffer   "empty"
-            :occupied 0
-            :put-at   0
-            :take-at  0
-            :threads
-            {0 [:consumer "awake"]
-             1 [:producer "awake"]
-             2 [:producer "awake"]}}
-           (ugraph/attrs g doc/ROOT)))))
+             :occupied 0
+             :put-at   0
+             :take-at  0
+             :threads
+             {0 [:consumer "awake"]
+              1 [:producer "awake"]
+              2 [:producer "awake"]}}
+            (ugraph/attrs g doc/ROOT)))))

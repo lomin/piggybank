@@ -124,7 +124,7 @@
            (always [:producer {:id 2, :notify 0}])
            (always [:producer {:id 2, :notify 1}]))}))
 
-(deftest ^:unit bounded-buffer-model-retest
+(deftest ^:model bounded-buffer-model-retest
   (is (=  {:buffer [:X]
            :check-count 3055
            :max-check-count 1959552

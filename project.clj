@@ -10,7 +10,8 @@
                  [ubergraph "0.6.0"]
                  [org.clojure/clojurescript "1.10.520"]
                  [org.clojure/data.json "0.2.6"]
-                 [me.lomin/sayang "0.3.0"]]
+                 [me.lomin/sayang "0.3.0"]
+                 [instaparse "1.4.10"]]
 
   :test-selectors {:default    #(not (some #{:slow-model} (keys %)))
                    :unit       #(not (some #{:slow-model :model} (keys %)))
