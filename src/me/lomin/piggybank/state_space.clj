@@ -5,12 +5,9 @@
 
 (def ROOT "start")
 
-(def my-hash (let [state (atom 0)]
-               (memoize (fn [_] (swap! state inc)))))
-
 (defn make-node [state]
   (if-let [timeline (:timeline state)]
-    (my-hash timeline)))
+    (hash timeline)))
 
 (defn check-property-violated [graph state]
   (if (:property-violated state)

@@ -18,7 +18,6 @@
                                               multi-threaded
                                               then]]
             [me.lomin.piggybank.timeline :as timeline]
-            [ubergraph.alg :as ualg]
             [ubergraph.core :as ugraph]))
 
 (defn check
@@ -235,44 +234,52 @@
       (assoc-some :property-violated (:property-violated state))
       (assoc-some :invalid-timeline (:invalid-timeline state))))
 
-(defn format-json [s]
-  (-> (str "\\{"
-           (apply str (rest (drop-last s)))
-           "\\}")
-      (str/replace #"\"" "")))
+(defn node-label [s]
+  (clojure.walk/postwalk
+   (fn [e]
+     (cond
+       (keyword? e) (name e)
+       (map-entry? e) e
+       (map? e) (-> (json/write-str e)
+                    (string/replace #"\\" "")
+                    (string/replace #"\{" "\\\\{")
+                    (string/replace #"\}" "\\\\}")
+                    (str/replace #"\"" ""))
+       (vector? e) (str "{" (string/join "|" e) "}")
+       :else (str e)))
+   s))
 
-(defn get-table-dot-str [k v format-f state]
-  (let [ks (mapv first (seq (k state)))
-        vs (mapv (comp format-f
-                       second) (seq (k state)))]
-    (str "{" (name k) "|{process|" (str/join "|" ks) "}|{" v "|" (str/join "|" vs) "}}")))
+(defn escape [& strs]
+  (str \" (string/join strs) \"))
 
-(defn get-completed-transfers-dot-str [state]
-  (str "{completed transfers|"
-       (str/join "|" (:completed-transfers state))
-       "}"))
+(defn string-node [node label]
+  (str node " [shape=record, label=" (escape (node-label label)) "];"))
+
+(defn state->node
+  ([state k]
+   "for vector state"
+   (if-let [xs (seq (get state k))]
+     (into [k] xs)
+     [k ""]))
+  ([state k header]
+   "for map state"
+   (let [sq (cons header (seq (k state)))
+         ks (mapv first sq)
+         vs (mapv second sq)]
+     [k ks vs])))
 
 (defn make-dot-str [g node]
   (if (= node doc/ROOT)
-    (str node " [shape=record, label=\"{{accounting|{process|db}|{document|\\{\\}}}|{balance|{process|db}|{amount|0}}|{completed transfers|}}\"];")
-    (let [state (ugraph/attrs g node)
-          label (str \"
-                     "{"
-                     (get-table-dot-str :accounting
-                                        "document"
-                                        (comp format-json
-                                              (fn [x] (json/write-str x)))
-                                        state)
-                     "|"
-                     (get-table-dot-str :balance
-                                        "amount"
-                                        identity
-                                        state)
-                     "|"
-                     (get-completed-transfers-dot-str state)
-                     "}"
-                     \")]
-      (str node " [shape=record, label=" label "];"))))
+    (string-node node [["accounting" ["process" "db"] ["document" {}]]
+                       ["balance" ["process" "db"] ["amount" 0]]
+                       ["completed transfers" ""]])
+    (let [state (ugraph/attrs g node)]
+      (string-node node
+                   (reduce conj
+                           []
+                           [(state->node state :accounting [:process :document])
+                            (state->node state :balance [:process :amount])
+                            (state->node state :completed-transfers)])))))
 
 (defn make-label-dot-str [g [src dest :as edge]]
   (str src " ->  " dest "[label=\"" (format-time-slot (:event (ugraph/attrs g edge))) "\"];"))
@@ -303,10 +310,10 @@
                                        [:accounting-write {:amount 1, :process-id 0}]
                                        [:accounting-read-last-write {:amount 1, :process-id 0}]
                                        [:balance-write {:amount 1, :process-id 0}]]
-                         :make-attrs make-attrs}))
+                         :make-attrs  make-attrs}))
 
-(defn multi-state-space-graph [] (last (multi-state-space)))
-(defn restart-state-space-graph [] (last (restart-state-space)))
+(defn multi-state-space-graph [] (multi-state-space))
+(defn restart-state-space-graph [] (restart-state-space))
 
 (defn get-bad-state [g]
   (let [format-events (fn [events]

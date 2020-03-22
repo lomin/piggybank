@@ -28,12 +28,9 @@
   (clojure.pprint/pprint data)
   (return-listing))
 
-(def my-hash (let [state (atom 0)]
-               (memoize (fn [_] (swap! state inc)))))
-
 (defn make-node [state]
   (if-let [timeline (:timeline state)]
-    (my-hash timeline)))
+    (hash timeline)))
 
 (defn check-property-violated [graph state]
   (if (:property-violated state)
@@ -56,14 +53,14 @@
   ([{:keys [model length interpreter universe prelines make-attrs]}]
    (let [prelines (vec (or (seq prelines) []))
          timelines (timeline/all-timelines-of-length length model #{prelines})]
-     (reductions (partial make-graph make-attrs)
-                 (ugraph/add-nodes-with-attrs (ugraph/digraph) [ROOT (make-attrs universe)])
-                 (map (comp interpreter
-                            (fn [timeline]
-                              {:universe universe
-                               :model    model
-                               :timeline timeline}))
-                      timelines)))))
+     (reduce (partial make-graph make-attrs)
+             (ugraph/add-nodes-with-attrs (ugraph/digraph) [ROOT (make-attrs universe)])
+             (map (comp interpreter
+                        (fn [timeline]
+                          {:universe universe
+                           :model    model
+                           :timeline timeline}))
+                  timelines)))))
 
 (defn not-leaf? [g node]
   (seq (ugraph/find-edges g {:src node})))
