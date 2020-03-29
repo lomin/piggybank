@@ -44,14 +44,14 @@
                                    {:amount 1, :process-id 0}]
                                   [:balance-write {:amount 1, :process-id 0}]]}})
 
-(deftest ^:focus extract-data-from-state-space
+(deftest ^:unit extract-data-from-state-space
   (is (= [0 1] (acc-doc/get-all-process-ids example-state)))
   (is (= {0 {:last-document {:test "0"}}, 1 {:last-document {:test "1"}}}
          (acc-doc/get-all-local-vars example-state)))
   (is (= {0 {:test "0"}, 1 {:test "1"}}
          (acc-doc/get-all-local-documents example-state))))
 
-(deftest ^:focus make-state-space-test
+(deftest ^:unit make-state-space-test
   (let [state-space (doc/make-state-space {:model       model/single-threaded-simple-model
                                            :length      5
                                            :keys        keys
@@ -79,14 +79,7 @@
            (count (doc/find-all-leafs g0))))
 
     (is (= '("start" 127232727 590401434)
-           (doc/find-path g0 :invalid-timeline)))
-
-    (acc-doc/write-dot-file g0 "/tmp/del.me")))
-
-(deftest ^:slow-model write-state-to-disk
-  (let [g (acc-doc/multi-state-space-graph)]
-    (acc-doc/write-dot-file (doc/remove-all-nodes g (doc/find-path g :property-violated))
-                            "/tmp/del3.me")))
+           (doc/find-path g0 :invalid-timeline)))))
 
 (defn make-two-producers-graph [length]
   (with-redefs [me.lomin.piggybank.bounded-buffer.spec/BUFFER-LENGTH 1]
@@ -121,7 +114,7 @@
               2 [:producer "awake"]}}
             (ugraph/attrs g doc/ROOT)))))
 
-(deftest ^:focus node-label-test
+(deftest ^:unit node-label-test
   (is (= "{{accounting|{process|db}|{document|\\{\\}}}|{balance|{process|db}|{amount|0}}|{completed transfers|}}"
          (acc-doc/node-label [["accounting" ["process" "db"] ["document" {}]]
                               ["balance" ["process" "db"] ["amount" 0]]
@@ -131,7 +124,7 @@
                               ["balance" ["process" "db"] ["amount" 0]]
                               ["completed transfers" ""]]))))
 
-(deftest ^:focus state-to-node-test
+(deftest ^:unit state-to-node-test
   (let [state {:accounting          {:db {} 0 {0 1}}
                :balance             {:db 0, 0 0}
                :completed-transfers []}]

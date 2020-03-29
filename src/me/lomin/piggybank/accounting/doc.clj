@@ -285,35 +285,10 @@
   (str src " ->  " dest "[label=\"" (format-time-slot (:event (ugraph/attrs g edge))) "\"];"))
 
 (defn write-dot-file
+  ([g] (doc/dot-string g {:make-dot-str       make-dot-str
+                          :make-label-dot-str make-label-dot-str}))
   ([g f] (doc/write-dot-file g f {:make-dot-str       make-dot-str
                                   :make-label-dot-str make-label-dot-str})))
-
-(defn multi-state-space []
-  (doc/make-state-space {:model       model/multi-threaded-simple-model
-                         :length      9
-                         :keys        keys
-                         :interpreter intp/interpret-timeline
-                         :universe    spec/empty-universe
-                         :partitions  5
-                         :make-attrs  make-attrs}))
-
-(defn restart-state-space []
-  (doc/make-state-space {:model       model/single-threaded+inmemory-balance+eventually-consistent-accounting-model
-                         :length      9
-                         :keys        keys
-                         :interpreter intp/interpret-timeline
-                         :universe    spec/empty-universe
-                         :partitions  5
-                         :prelines    [[:process {:amount 1, :process-id 0}]
-                                       [:balance-read {:amount 1, :process-id 0}]
-                                       [:accounting-read {:amount 1, :process-id 0}]
-                                       [:accounting-write {:amount 1, :process-id 0}]
-                                       [:accounting-read-last-write {:amount 1, :process-id 0}]
-                                       [:balance-write {:amount 1, :process-id 0}]]
-                         :make-attrs  make-attrs}))
-
-(defn multi-state-space-graph [] (multi-state-space))
-(defn restart-state-space-graph [] (restart-state-space))
 
 (defn get-bad-state [g]
   (let [format-events (fn [events]
@@ -323,6 +298,3 @@
     (-> node
         (update :timeline format-events)
         (assoc :property-violated (get-in node [:property-violated :name])))))
-
-(defn write-bad-state [g]
-  (spit "/tmp/bad-state.json" (clojure.data.json/write-str (get-bad-state g))))

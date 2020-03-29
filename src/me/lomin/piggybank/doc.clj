@@ -92,10 +92,19 @@
             (ugraph/nodes g))))
 
 (defn write-dot-file [g f options]
-  (do
-    (spit f "digraph G {\n    edge [label=0];\n    graph [ranksep=0];\n" :append false)
-    (doseq [node (ugraph/nodes g)]
-      (spit f (str ((:make-dot-str options) g node) "\n") :append true))
-    (doseq [node (ugraph/edges g)]
-      (spit f (str ((:make-label-dot-str options) g node) "\n") :append true))
-    (spit f "}" :append true)))
+  (let [out (or (:out options) spit)]
+    (do
+      (out f "digraph G {\n    edge [label=0];\n    graph [ranksep=0];\n" :append false)
+      (doseq [node (ugraph/nodes g)]
+        (out f (str ((:make-dot-str options) g node) "\n") :append true))
+      (doseq [node (ugraph/edges g)]
+        (out f (str ((:make-label-dot-str options) g node) "\n") :append true))
+      (str (out f "}" :append true)))))
+
+(defn dot-string [g options]
+  (write-dot-file g
+                  (new StringBuffer)
+                  (assoc options
+                         :out
+                         (fn [buffer s & _]
+                           (.append buffer s)))))
