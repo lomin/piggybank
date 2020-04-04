@@ -56,63 +56,18 @@
           (performance-shortcut (model/all-models 3))))
 
 (deftest ^:slow-model bounded-buffer-model-test
-  (is (= {:buffer            [:X]
-          :check-count       4878
-          :history           '({:buffer      [:X]
-                                :check-count 6
-                                :occupied    0
-                                :put-at      1
-                                :return      :X
-                                :take-at     1
-                                :threads     {1 :sleeping, 2 :sleeping}}
-                               {:buffer      [:X]
-                                :check-count 5
-                                :occupied    0
-                                :put-at      1
-                                :return      :X
-                                :take-at     1
-                                :threads     {2 :sleeping}}
-                               {:buffer      [:X]
-                                :check-count 4
-                                :occupied    1
-                                :put-at      1
-                                :take-at     0
-                                :threads     {1 :sleeping, 2 :sleeping}}
-                               {:buffer      [:X]
-                                :check-count 3
-                                :occupied    1
-                                :put-at      1
-                                :take-at     0
-                                :threads     {1 :sleeping}}
-                               {:buffer      [nil]
-                                :check-count 2
-                                :occupied    0
-                                :put-at      0
-                                :take-at     0
-                                :threads     {0 :sleeping, 1 :sleeping}}
-                               {:buffer      [nil]
-                                :check-count 1
-                                :occupied    0
-                                :put-at      0
-                                :take-at     0
-                                :threads     {1 :sleeping}}
-                               {:buffer [nil], :occupied 0, :put-at 0, :take-at 0, :threads {}})
-          :max-check-count   33480783
-          :occupied          0
-          :property-violated {:name     :there-must-be-no-deadlocks
-                              :timeline [[:consumer {:id 1, :notify 0}]
-                                         [:consumer {:id 0, :notify 0}]
-                                         [:producer {:id 2, :notify 0}]
-                                         [:producer {:id 2, :notify 1}]
-                                         [:consumer {:id 0, :notify 1}]
-                                         [:consumer {:id 1, :notify 1}]
-                                         [:consumer {:id 0, :notify 2}]]}
-          :put-at            1
-          :return            :X
-          :take-at           1
-          :threads           {0 :sleeping, 1 :sleeping, 2 :sleeping}}
-         (with-redefs [me.lomin.piggybank.bounded-buffer.spec/BUFFER-LENGTH 1]
-           (check-all 7 nil)))))
+  (is (=* {:max-check-count   33480783
+           :property-violated {:name     :there-must-be-no-deadlocks
+                               :timeline [[:consumer]
+                                          [:consumer]
+                                          [:producer]
+                                          [:producer]
+                                          [:consumer]
+                                          [:consumer]
+                                          [:consumer]]}
+           :threads           {0 :sleeping, 1 :sleeping, 2 :sleeping}}
+          (with-redefs [me.lomin.piggybank.bounded-buffer.spec/BUFFER-LENGTH 1]
+            (check-all 7 nil)))))
 
 (def bounded-buffer-model
   (make-model
@@ -125,25 +80,20 @@
            (always [:producer {:id 2, :notify 1}]))}))
 
 (deftest ^:model bounded-buffer-model-retest
-  (is (=  {:buffer [:X]
-           :check-count 3055
-           :max-check-count 1959552
-           :occupied 0
-           :property-violated {:name :there-must-be-no-deadlocks
-                               :timeline [[:consumer {:id 1, :notify 0}]
-                                          [:consumer {:id 0, :notify 2}]
-                                          [:producer {:id 2, :notify 1}]
-                                          [:producer {:id 2, :notify 0}]
-                                          [:consumer {:id 1, :notify 0}]
-                                          [:consumer {:id 1, :notify 0}]
-                                          [:consumer {:id 0, :notify 1}]]}
-           :put-at 1
-           :take-at 1
-           :threads {0 :sleeping, 1 :sleeping, 2 :sleeping}}
-          (with-redefs [me.lomin.piggybank.bounded-buffer.spec/BUFFER-LENGTH 1]
-            (check bounded-buffer-model
-                   7
-                   [:max-check-count :put-at :threads :occupied :check-count :take-at :property-violated :buffer])))))
+  (is (=*  {:max-check-count 1959552
+            :property-violated {:name :there-must-be-no-deadlocks
+                                :timeline [[:consumer]
+                                           [:consumer]
+                                           [:producer]
+                                           [:producer]
+                                           [:consumer]
+                                           [:consumer]
+                                           [:consumer]]}
+            :threads {0 :sleeping, 1 :sleeping, 2 :sleeping}}
+           (with-redefs [me.lomin.piggybank.bounded-buffer.spec/BUFFER-LENGTH 1]
+             (check bounded-buffer-model
+                    7
+                    [:max-check-count :put-at :threads :occupied :check-count :take-at :property-violated :buffer])))))
 
 (deftest ^:unit bounded-buffer-model-timeline-test
   (is (=* {:property-violated {:name     :there-must-be-no-deadlocks
