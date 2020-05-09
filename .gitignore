@@ -13,3 +13,4 @@ pom.xml.asc
 .idea
 *.iml
 .ipynb_checkpoints
+.git
