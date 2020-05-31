@@ -64,12 +64,12 @@
                        [:balance-read {:amount 1, :process-id 0}]
                        [:accounting-read {:amount 1, :process-id 0}]
                        [:accounting-write {:amount 1, :process-id 0}]
-                       [:balance-write {:amount 1, :process-id 0}]
+                       [:terminate/balance-write {:amount 1, :process-id 0}]
                        [:process {:amount -1, :process-id 1}]
                        [:balance-read {:amount -1, :process-id 1}]
                        [:accounting-read {:amount -1, :process-id 1}]
                        [:accounting-write {:amount -1, :process-id 1}]
-                       [:restart {:go-steps-back-in-timeline 1}]
+                       [:terminate/restart {:go-steps-back-in-timeline 1}]
                        [:process {:amount -1, :process-id 2}]
                        [:balance-read {:amount -1, :process-id 2}]
                        [:accounting-read {:amount -1, :process-id 2}]
@@ -79,12 +79,12 @@
                                             [:balance-read {:amount 1, :process-id 0}]
                                             [:accounting-read {:amount 1, :process-id 0}]
                                             [:accounting-write {:amount 1, :process-id 0}]
-                                            [:balance-write {:amount 1, :process-id 0}]
+                                            [:terminate/balance-write {:amount 1, :process-id 0}]
                                             [:process {:amount -1, :process-id 1}]
                                             [:balance-read {:amount -1, :process-id 1}]
                                             [:accounting-read {:amount -1, :process-id 1}]
                                             [:accounting-write {:amount -1, :process-id 1}]
-                                            [:restart {:go-steps-back-in-timeline 1}]
+                                            [:terminate/restart {:go-steps-back-in-timeline 1}]
                                             [:process {:amount -1, :process-id 2}]
                                             [:balance-read {:amount -1, :process-id 2}]
                                             [:accounting-read {:amount -1, :process-id 2}]
@@ -119,49 +119,49 @@
 (deftest ^:unit restarting-a-system-without-strong-consistency-guarantees-test
   (testing "restarting a system with an inmemory-db and an eventually consistent database"
     (is (=* {:balance {:amount 0}}
-            (interpret-timeline empty-universe [[:restart {:go-steps-back-in-timeline 0}]])))
+            (interpret-timeline empty-universe [[:terminate/restart {:go-steps-back-in-timeline 0}]])))
     (is (=* {:balance {:amount 3}}
             (interpret-timeline empty-universe [[:accounting-read {:process-id 1 :amount 1}]
                                                 [:accounting-write {:process-id 1 :amount 1}]
-                                                [:balance-write {:process-id 1 :amount 1}]
+                                                [:terminate/balance-write {:process-id 1 :amount 1}]
                                                 [:accounting-read {:process-id 2 :amount 2}]
                                                 [:accounting-write {:process-id 2 :amount 2}]
-                                                [:balance-write {:process-id 2 :amount 2}]])))
+                                                [:terminate/balance-write {:process-id 2 :amount 2}]])))
 
     (is (=* {:balance {:amount 3}}
             (interpret-timeline empty-universe [[:accounting-read {:process-id 1 :amount 1}]
                                                 [:accounting-write {:process-id 1 :amount 1}]
-                                                [:balance-write {:process-id 1 :amount 1}]
+                                                [:terminate/balance-write {:process-id 1 :amount 1}]
                                                 [:accounting-read {:process-id 2 :amount 2}]
                                                 [:accounting-write {:process-id 2 :amount 2}]
-                                                [:balance-write {:process-id 2 :amount 2}]
-                                                [:restart {:go-steps-back-in-timeline 0}]])))
+                                                [:terminate/balance-write {:process-id 2 :amount 2}]
+                                                [:terminate/restart {:go-steps-back-in-timeline 0}]])))
 
     (is (=* {:balance {:amount 3}}
             (interpret-timeline empty-universe [[:accounting-read {:process-id 1 :amount 1}]
                                                 [:accounting-write {:process-id 1 :amount 1}]
-                                                [:balance-write {:process-id 1 :amount 1}]
+                                                [:terminate/balance-write {:process-id 1 :amount 1}]
                                                 [:accounting-read {:process-id 2 :amount 2}]
                                                 [:accounting-write {:process-id 2 :amount 2}]
-                                                [:balance-write {:process-id 2 :amount 2}]
-                                                [:restart {:go-steps-back-in-timeline 1}]])))
+                                                [:terminate/balance-write {:process-id 2 :amount 2}]
+                                                [:terminate/restart {:go-steps-back-in-timeline 1}]])))
 
     (is (=* {:balance {:amount 3}}
             (interpret-timeline empty-universe [[:accounting-read {:process-id 1 :amount 1}]
                                                 [:accounting-write {:process-id 1 :amount 1}]
-                                                [:balance-write {:process-id 1 :amount 1}]
+                                                [:terminate/balance-write {:process-id 1 :amount 1}]
                                                 [:accounting-read {:process-id 2 :amount 2}]
                                                 [:accounting-write {:process-id 2 :amount 2}]
-                                                [:balance-write {:process-id 2 :amount 2}]
+                                                [:terminate/balance-write {:process-id 2 :amount 2}]
                                                 [:accounting-read {:process-id 3 :amount 3}]
-                                                [:restart {:go-steps-back-in-timeline 2}]])))
+                                                [:terminate/restart {:go-steps-back-in-timeline 2}]])))
 
     (is (=* {:balance {:amount 1}}
             (interpret-timeline empty-universe [[:accounting-read {:process-id 1 :amount 1}]
                                                 [:accounting-write {:process-id 1 :amount 1}]
-                                                [:balance-write {:process-id 1 :amount 1}]
+                                                [:terminate/balance-write {:process-id 1 :amount 1}]
                                                 [:accounting-read {:process-id 2 :amount 2}]
                                                 [:accounting-write {:process-id 2 :amount 2}]
-                                                [:balance-write {:process-id 2 :amount 2}]
+                                                [:terminate/balance-write {:process-id 2 :amount 2}]
                                                 [:accounting-read {:process-id 3 :amount 3}]
-                                                [:restart {:go-steps-back-in-timeline 3}]])))))
+                                                [:terminate/restart {:go-steps-back-in-timeline 3}]])))))

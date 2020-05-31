@@ -87,12 +87,12 @@
       :balance-read (balance-read state data)
       :accounting-read (db-read state data)
       :accounting-write (db-write state data)
-      :balance-write (state-write state data)
+      :terminate/balance-write (state-write state data)
       :accounting-link-to-new-document (db-link-to-new-document state data)
       :accounting-add-new-document (db-add-new-document state data)
       :accounting-gc-new-branch (db-gc-new-branch state data)
       :accounting-gc-link-to-new-branch (db-gc-link-to-new-branch state data)
-      :restart (restart state data)
+      :terminate/restart (restart state data)
       state)))
 
 (def SPECIFICS {:interpret-event        interpret-event

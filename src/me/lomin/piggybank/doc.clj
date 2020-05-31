@@ -100,7 +100,6 @@
       (doseq [node (ugraph/edges g)]
         (out f (str ((:make-label-dot-str options) g node) "\n") :append true))
       (str (out f "}" :append true)))))
-
 (defn dot-string [g options]
   (write-dot-file g
                   (new StringBuffer)

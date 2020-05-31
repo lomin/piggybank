@@ -1,6 +1,6 @@
 (ns me.lomin.piggybank.accounting.timeline-test
   (:require [clojure.test :refer :all]
-            [me.lomin.piggybank.accounting.model :refer [then-for-every-past-time-slot] :as model]
+            [me.lomin.piggybank.accounting.model :as model]
             [me.lomin.piggybank.model :refer [all
                                               always
                                               choose
@@ -10,8 +10,10 @@
                                               multi-threaded
                                               only
                                               restart
+                                              single-threaded
                                               START
-                                              then]]
+                                              then
+                                              then-for-every-past-time-slot]]
             [me.lomin.piggybank.timeline :as timeline]
             [orchestra.spec.test :as orchestra]))
 
@@ -23,23 +25,23 @@
 
 (def simple-model
   (make-model
-   {START             (all (generate-incoming multi-threaded
-                                              [:process {:amount 1}]
-                                              [:process {:amount -1}]))
-    :process          (all (then :accounting-read))
-    :accounting-read  (all (then :accounting-write))
-    :accounting-write (all (then :balance-write))
-    :balance-write    (continue)}))
+   {START                   (all (generate-incoming multi-threaded
+                                                    [:process {:amount 1}]
+                                                    [:process {:amount -1}]))
+    :process                 (all (then :accounting-read))
+    :accounting-read         (all (then :accounting-write))
+    :accounting-write        (all (then :terminate/balance-write))
+    :terminate/balance-write (continue)}))
 
 (def simple-single-model
   (make-model
-   {START             (all (generate-incoming model/single-threaded
-                                              [:process {:amount 1}]
-                                              [:process {:amount -1}]))
-    :process          (all (then :accounting-read))
-    :accounting-read  (all (then :accounting-write))
-    :accounting-write (all (then :balance-write))
-    :balance-write    (continue)}))
+   {START                   (all (generate-incoming single-threaded
+                                                    [:process {:amount 1}]
+                                                    [:process {:amount -1}]))
+    :process                 (all (then :accounting-read))
+    :accounting-read         (all (then :accounting-write))
+    :accounting-write        (all (then :terminate/balance-write))
+    :terminate/balance-write (continue)}))
 
 (deftest ^:unit multi-threaded-timeline-test
   (is (= 13932
@@ -110,26 +112,26 @@
 
 (deftest ^:unit timeline-dependent-of-past-test
   (is (= #{[[:process {:amount 1, :process-id 0}]
-            [:balance-write {:amount 1, :process-id 0}]
+            [:terminate/balance-write {:amount 1, :process-id 0}]
             [:process {:amount 1, :process-id 1}]]
            [[:process {:amount 1, :process-id 0}]
-            [:balance-write {:amount 1, :process-id 0}]
-            [:restart {:go-steps-back-in-timeline 0, :process-id 0}]]
+            [:terminate/balance-write {:amount 1, :process-id 0}]
+            [:terminate/restart {:go-steps-back-in-timeline 0, :process-id 0}]]
            [[:process {:amount 1, :process-id 0}]
-            [:balance-write {:amount 1, :process-id 0}]
-            [:restart {:go-steps-back-in-timeline 1, :process-id 0}]]
+            [:terminate/balance-write {:amount 1, :process-id 0}]
+            [:terminate/restart {:go-steps-back-in-timeline 1, :process-id 0}]]
            [[:process {:amount 1, :process-id 0}]
-            [:restart {:go-steps-back-in-timeline 0, :process-id 0}]
+            [:terminate/restart {:go-steps-back-in-timeline 0, :process-id 0}]
             [:process {:amount 1, :process-id 1}]]
            [[:process {:amount 1, :process-id 0}]
-            [:restart {:go-steps-back-in-timeline 1, :process-id 0}]
+            [:terminate/restart {:go-steps-back-in-timeline 1, :process-id 0}]
             [:process {:amount 1, :process-id 1}]]}
          (timeline/all-timelines-of-length 3
                                            (partial make-model
-                                                    {START          (all (generate-incoming model/single-threaded
-                                                                                            [:process {:amount 1}]))
-                                                     :restart       (all (restart))
-                                                     :process       (choose (model/then-for-every-past-time-slot :restart)
-                                                                            (then :balance-write))
-                                                     :balance-write (choose (model/then-for-every-past-time-slot :restart)
-                                                                            (restart))})))))
+                                                    {START                    (all (generate-incoming single-threaded
+                                                                                                      [:process {:amount 1}]))
+                                                     :terminate/restart       (all (restart))
+                                                     :process                 (choose (then-for-every-past-time-slot :terminate/restart)
+                                                                                      (then :terminate/balance-write))
+                                                     :terminate/balance-write (choose (then-for-every-past-time-slot :terminate/restart)
+                                                                                      (restart))})))))

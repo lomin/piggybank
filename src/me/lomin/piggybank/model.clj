@@ -8,13 +8,18 @@
 (defn get-process-id [[_ data]]
   (:process-id data))
 
-(defn find-events [timeline event-type]
-  (filter (fn [[event-type*]]
-            (= event-type* event-type))
-          timeline))
+(defn find-events
+  ([timeline predicate & args]
+   (let [predicate* (apply partial predicate args)]
+     (filter (fn [[event-type*]]
+               (predicate* event-type*))
+             timeline))))
+
+(defn find-events= [timeline event-type]
+  (find-events timeline = event-type))
 
 (defn get-last-process-id [timeline]
-  (or (->> (find-events timeline :process)
+  (or (->> (find-events= timeline :process)
            (sort-by get-process-id)
            (last)
            (get-process-id))
@@ -67,6 +72,47 @@
 ;; combinators
 
 (defn multi-threaded [_] true)
+
+(defn n-back-in-time [up-to timeline]
+  (comment range (- (inc (count timeline))
+                    (-> (filter (fn [[_ event]] (= event up-to))
+                                (map-indexed (fn [i [event]] [i event]) timeline))
+                        (last)
+                        (first)
+                        (or -1)
+                        (inc))))
+  (range 2))
+
+(defn find-restartable-process-id [timeline]
+  (there-exists [[_ {pid :process-id}] (find-events= timeline :process)]
+                (and (for-all [[_ {restart-pid :process-id}] (find-events= timeline :terminate/restart)]
+                              (not= pid restart-pid))
+                     (not (there-exists [[_ {finished-pid :process-id}] (find-events= timeline :process)]
+                                        (< pid finished-pid)))
+                     pid)))
+
+(defn- make-event-candidates-for-every-past-time-slot [event-types {timeline :timeline}]
+  (let [result-pid (find-restartable-process-id timeline)]
+    (set (map (fn [[event i]] [event {:go-steps-back-in-timeline i :process-id result-pid}])
+              (combo/cartesian-product event-types
+                                       (n-back-in-time nil timeline))))))
+
+(defn then-for-every-past-time-slot [& event-types]
+  (combine-events-with set/union
+                       make-event-candidates-for-every-past-time-slot
+                       event-types))
+
+(defn terminated? [k]
+  (= (namespace k) "terminate"))
+
+(defn- writing-process-finished? [timeline]
+  (for-all [incoming-event (find-events= timeline :process)]
+           (there-exists [write-completion-event (find-events timeline terminated?)]
+                         (= (get-process-id incoming-event)
+                            (get-process-id write-completion-event)))))
+
+(defn single-threaded [{:keys [timeline]}]
+  (writing-process-finished? timeline))
 
 (defn always [& events]
   (fn [event-candidates _]

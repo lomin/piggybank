@@ -41,7 +41,7 @@
   [:process {:amount -1, :process-id 1} :doc "Eine Anfrage mit der Prozess-Id 1 zur Abhebung von 1 Euro wurde gestartet."]
   [:accounting-read {:amount 1, :process-id 0} :doc "Die notwendigen Daten aus dem Buchhaltungssystem wurden abgefragt. Das Ergebnis der Abfrage wurde abgelegt. Ausgelöst wurde dieses Event durch den Prozess mit der Prozess-Id 0."]
   [:accounting-write {:amount 1, :process-id 0} :doc "Die Transaktion wurde im Buchhaltungssystem festgehalten."]
-  [:balance-write {:amount 1, :process-id 0} :doc "Das Saldo des Sparschweins wurde aktualisiert."])
+  [:terminate/balance-write {:amount 1, :process-id 0} :doc "Das Saldo des Sparschweins wurde aktualisiert."])
 
 (defn print-accounting-events []
   (print-source me.lomin.piggybank.accounting.doc/example-accounting-events))
@@ -210,9 +210,9 @@
     :balance-read [(symbol "BR") (make-pid process-id)]
     :accounting-read [(symbol "AR") (make-pid process-id)]
     :accounting-write [(symbol "AW") (make-pid process-id)]
-    :balance-write [(symbol "BW") (make-pid process-id)]
+    :terminate/balance-write [(symbol "BW") (make-pid process-id)]
     :accounting-read-last-write [(symbol "ALWR") (make-pid process-id)]
-    :restart (format-reset time-slot)
+    :terminate/restart (format-reset time-slot)
     time-slot))
 
 (defn assoc-some [m k v]
@@ -287,8 +287,8 @@
 (defn write-dot-file
   ([g] (doc/dot-string g {:make-dot-str       make-dot-str
                           :make-label-dot-str make-label-dot-str}))
-  ([g f] (doc/write-dot-file g f {:make-dot-str       make-dot-str
-                                  :make-label-dot-str make-label-dot-str})))
+  ([g $file] (doc/write-dot-file g $file {:make-dot-str       make-dot-str
+                                          :make-label-dot-str make-label-dot-str})))
 
 (defn get-bad-state [g]
   (let [format-events (fn [events]

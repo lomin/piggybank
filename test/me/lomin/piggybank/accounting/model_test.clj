@@ -34,25 +34,25 @@
 
 (deftest ^:unit choose-test
   (let [choose-model (partial make-model
-                              {::model/always   (all (generate-incoming multi-threaded
-                                                                        [:process {:amount 1}]
-                                                                        [:process {:amount -1}])
-                                                     (always [:stuttering]))
-                               :process         (choose (then :accounting-read)
-                                                        (then :balance-write))
-                               :accounting-read (continue)
-                               :balance-write   (continue)})
+                              {::model/always           (all (generate-incoming multi-threaded
+                                                                                [:process {:amount 1}]
+                                                                                [:process {:amount -1}])
+                                                             (always [:stuttering]))
+                               :process                 (choose (then :accounting-read)
+                                                                (then :terminate/balance-write))
+                               :accounting-read         (continue)
+                               :terminate/balance-write (continue)})
         choose-timelines (timeline/all-timelines-of-length 3
                                                            choose-model)]
     (is (= nil
            (seq (filter (fn [[_ a b]]
                           (and (= a :accounting-read)
-                               (= b :balance-write)))
+                               (= b :terminate/balance-write)))
                         choose-timelines))))
 
     (is (= nil
            (seq (filter (fn [[_ a b]]
-                          (and (= a :balance-write)
+                          (and (= a :terminate/balance-write)
                                (= b :accounting-read)))
                         choose-timelines))))))
 
@@ -83,13 +83,13 @@
             [:accounting-read {:amount 1, :process-id 0}]
             [:accounting-write {:amount 1, :process-id 0}]
             [:accounting-read-last-write {:amount 1, :process-id 0}]
-            [:balance-write {:amount 1, :process-id 0}]
+            [:terminate/balance-write {:amount 1, :process-id 0}]
             [:process {:amount -1, :process-id 1}]
             [:balance-read {:amount -1, :process-id 1}]
             [:accounting-read {:amount -1, :process-id 1}]
             [:accounting-write {:amount -1, :process-id 1}]
             [:accounting-read-last-write {:amount -1, :process-id 1}]
-            [:restart {:go-steps-back-in-timeline 1}]
+            [:terminate/restart {:go-steps-back-in-timeline 1}]
             [:process {:amount -1, :process-id 2}]
             [:balance-read {:amount -1, :process-id 2}]
             [:accounting-read {:amount -1, :process-id 2}]
@@ -108,12 +108,12 @@
              [:accounting-read {:amount 1, :process-id 0}]
              [:accounting-write {:amount 1, :process-id 0}]
              [:accounting-read-last-write {:amount 1, :process-id 0}]
-             [:balance-write {:amount 1, :process-id 0}]
+             [:terminate/balance-write {:amount 1, :process-id 0}]
              [:process {:amount -1, :process-id 1}]
              [:balance-read {:amount -1, :process-id 1}]
              [:accounting-read {:amount -1, :process-id 1}]
              [:accounting-write {:amount -1, :process-id 1}]
-             [:restart {:go-steps-back-in-timeline 1, :process-id 1}]
+             [:terminate/restart {:go-steps-back-in-timeline 1, :process-id 1}]
              [:process {:amount -1, :process-id 2}]
              [:balance-read {:amount -1, :process-id 2}]
              [:accounting-read {:amount -1, :process-id 2}]
@@ -127,7 +127,7 @@
                   [:accounting-read {:amount 1, :process-id 0}]
                   [:accounting-write {:amount 1, :process-id 0}]
                   [:accounting-read-last-write {:amount 1, :process-id 0}]
-                  [:balance-write {:amount 1, :process-id 0}]]))))
+                  [:terminate/balance-write {:amount 1, :process-id 0}]]))))
 
 {:check-count     34378
  :max-check-count 36900
@@ -139,12 +139,12 @@
              [:accounting-write {:amount 1, :process-id 0}]
              [:accounting-read-last-write
               {:amount 1, :process-id 0}]
-             [:balance-write {:amount 1, :process-id 0}]
+             [:terminate/balance-write {:amount 1, :process-id 0}]
              [:process {:amount -1, :process-id 0}]
              [:balance-read {:amount -1, :process-id 0}]
              [:accounting-read {:amount -1, :process-id 0}]
              [:accounting-write {:amount -1, :process-id 0}]
-             [:restart
+             [:terminate/restart
               {:go-steps-back-in-timeline 1, :process-id 0}]
              [:process {:amount -1, :process-id 1}]
              [:balance-read {:amount -1, :process-id 1}]
